@@ -6,4 +6,4 @@
 module load 2019
 module load Python/3.6.6-intel-2019b
 
-python ../simulation.py
+python -u ../simulation.py
