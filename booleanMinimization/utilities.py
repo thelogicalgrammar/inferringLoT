@@ -95,94 +95,53 @@ def create_database(db_path, op_dict, prop_dict):
         con = sqlite3.connect(db_path)
         cur = con.cursor()
 
-        # this command is the same for all tables
-        # and creates one row for each inventory
-        command_add_rows_func = lambda tablename: (
-            f'INSERT INTO {tablename} ' +
-            # add the columns to modify
-            '(' +
-            ', '.join([
-                f'{op_name}'
-                for op_name in op_names
-            ]) +
-            ')' +
-            '\n VALUES \n' +
-            # add the values for the columns
-            # corresponding to the operators
-            ', '.join([
-                str(tuple([int(op in inv) for op in op_names]))
-                for inv in all_inventories
-            ])
-            + ';'
-        )
-        
-        ###################### CREATE LENGTHS TABLE
-        # TODO: make more secure by not using
-        # dynamically constructed string for SQL
-        command_create_table_lengths = (
-            'CREATE TABLE lengths(\n' +
-            # create a column for each operator
-            # which will hold boolean values
-            ', \n'.join(
-                f'{op_name} INTEGER'
-                for op_name in op_names
-            ) 
-            + ', \n' +
-            # create a column for each category
-            # which will hold lengths
-            # note that each category is effectively an int
-            # that should be converted to bin
-            ', \n'.join(
-                f'b{cat_name} INTEGER'
-                for cat_name in range(0,2**(2**num_props))
-            )
-            + '\n);'
-        )
-        cur.execute(command_create_table_lengths)
-        # insert one row for each inventory,
-        # i.e. one row for each functionally complete
-        # combination of operators
-        command_add_rows_lenghts = command_add_rows_func('lengths')
-        cur.execute(command_add_rows_lenghts)
-
-        ###################### CREATE FORMULAS TABLE
-
-        command_create_table_formulas = (
-            'CREATE TABLE formulas(\n' +
-            # create a column for each operator
-            # which will hold boolean values
-            ', \n'.join(
-                f'{op_name} INTEGER'
-                for op_name in op_names
-            ) 
-            + ', \n' +
-            # create a column for each category
-            # which will hold the formulas
-            ', \n'.join(
-                f'b{cat_name} STRING'
-                for cat_name in range(0,2**(2**num_props))
-            )
-            + '\n);'
-        )
-        cur.execute(command_create_table_formulas)
-        # (see create of lengths table above for explanation)
-        command_add_rows_formulas = command_add_rows_func('formulas')
-        cur.execute(command_add_rows_formulas)
-        ###################### CREATE STATUS TABLE
-
         command_create_table_status = (
             'CREATE TABLE status(\n' +
+            # create a column for each operator
+            # which will hold boolean values
+            ', \n'.join(
+                f'{op_name} INTEGER'
+                for op_name in op_names
+            ) + ', \n' +
+            'status STRING DEFAULT "w"\n);'
+        )
+        print(command_create_table_status)
+        cur.execute(command_create_table_status)
+        
+        # add one row for each inventory
+        # in the status table
+        op_columns = f'({", ".join([f"{op_name}" for op_name in op_names])})' 
+        command_add_inventories_to_status = (
+            f'INSERT INTO status {op_columns} '
+            f'VALUES ({", ".join("?" for _ in op_names)})'
+        )
+        arguments = [
+            tuple([int(op in inv) for op in op_names]) 
+            for inv in all_inventories
+        ]
+        print(command_add_inventories_to_status)
+        cur.executemany(
+            command_add_inventories_to_status,
+            arguments
+        )
+
+        # create data table
+        command_create_table_data = (
+            'CREATE TABLE data(\n' +
+            # create a column for each operator
+            # which will hold boolean values
             ', \n'.join(
                 f'{op_name} INTEGER'
                 for op_name in op_names
             ) 
-            + ', \n status STRING DEFAULT "w"\n);'
+            + ', \n' +
+            'category INTEGER,\n'+
+            'length INTEGER,\n'+
+            'formula STRING \n'
+            + ');'
         )
-        cur.execute(command_create_table_status)
-        # (see create of lengths table above for explanation)
-        command_add_rows_status = command_add_rows_func('status')
-        cur.execute(command_add_rows_status)
-        
+        cur.execute(command_create_table_data)
+        print(command_create_table_data)
         con.commit()
         con.close()
 

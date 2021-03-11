@@ -90,18 +90,10 @@ class Inventory(SetOfFormulas):
         self.saturated = [a for a in self.formulas if a.saturated]
         self.unsaturated = [a for a in self.formulas if not a.saturated]
         self.has_all_minimal_formulas = False
-        # sqlite select the row corresponding to this inventory
-        # with smt like 'WHERE O=0 AND A=1 etc.'
-        operators = [
+        self.operators = [
             re.sub('[_(),]', '', f.symbol)
             for f in self.formulas
         ]
-        self.row_selection = (
-            ' WHERE ' + 
-            ' AND '.join(
-                f'{op_name} = {int(op_name in operators)}'
-                for op_name in OP_DICT.keys())
-        )
 
     def try_add_minimal_formula(self, formula):
         # check if it is already in self.saturated
@@ -144,35 +136,31 @@ class Inventory(SetOfFormulas):
 
         cur = con.cursor()
 
-        ########### add lengths to the lengths database
-        # NOTE: only a single row is modified here
-        # namely, the one that corresponds to the inventory
-        command_add_lengths = (
-            'UPDATE lengths \n' +
-            # for each saturated formula set the right length
-            'SET ' 
-            + ', '.join([
-                f'b{formula.meaning}={formula.length}' 
-                for formula
-                in self.saturated
-            ]) +
-            self.row_selection
-        )
-        cur.execute(command_add_lengths)
+        # self.all_ops contains the list of ops
+        # self.has_op_bools contains a list of 
+        # binary encoding whether has respective op
+        # crucially, the two lists are in the same order
+        self.all_ops, self.has_op_bools = zip(*[
+            (f'"{op}"', str(int(op in self.operators)))
+            for op in OP_DICT.keys()
+        ])
 
-        ########### add formulas to the formulas database
-        # (for explanation of command see the command_add_lengths
-        # right above)
-        command_add_formulas = (
-            'UPDATE formulas \n' +
-            'SET ' 
-            + ', '.join([
-                f'b{formula.meaning}="{formula.symbol}"' 
-                for formula
-                in self.saturated
-            ]) + self.row_selection
+        ########### add data to the data table
+        # NOTE: it only adds the formulas that were calculated.
+        # implicitly longer formulas can be dealt with later
+        # in the analysis
+        arguments = [
+            (cat.meaning, cat.length, cat.symbol)
+            for cat in self.saturated
+        ]
+        add_rows_command = (
+            f'INSERT INTO data({",".join(self.all_ops)}, "category", "length", "formula") \n' +
+            f'VALUES({",".join(self.has_op_bools)}, ?,?,?);'
         )
-        cur.execute(command_add_formulas)
+        cur.executemany(
+            add_rows_command,
+            arguments
+        )
 
         ############ change status to "done"
         self.change_status_in_db('d', con, cur)
@@ -183,6 +171,9 @@ class Inventory(SetOfFormulas):
         command_update_status = (
             'UPDATE status \n' +
             f'SET status="{newstatus}"' +
-            self.row_selection
+            ' WHERE ' + 
+            ' AND '.join(
+                f'{op_name} = {int(op_name in self.operators)}'
+                for op_name in OP_DICT.keys())
         )
         cur.execute(command_update_status)

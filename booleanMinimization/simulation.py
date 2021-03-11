@@ -6,22 +6,26 @@ import sqlite3
 import signal
 import sys
 
-# Exits gracefully by setting the status of the current job back to 'w'(aiting)
-# so that another job can pick it up 
-# This is means to deal with the server's cancellation due to time limits
-# NOTE: this relies on the fact that there is some time between
-# SIGTERM and SIGKILL. As can be seen in the server with 'man sbatch'.
-# Moreover, in LISA this time is 30 seconds, 
-# as can be seen under 'KillWait' with 'scontrol show config | less'
-# 30 seconds is plenty to change the status back.
+
 def terminate_signal(signum, frame):
-
+    """
+    Exits gracefully by setting the status of the current job back to 'w'(aiting)
+    so that another job can pick it up 
+    This is means to deal with the server's cancellation due to time limits
+    NOTE: this relies on the fact that there is some time between
+    SIGTERM and SIGKILL. As can be seen in the server with 'man sbatch'.
+    Moreover, in LISA this time is 30 seconds, 
+    as can be seen under 'KillWait' with 'scontrol show config | less'
+    30 seconds is plenty to change the status back.
+    TODO: For some reason in the server the SIGTERM isn't being caught.
+    and therefore the terminate_signal doesn't run and some
+    rows that were started remain with status 'r' 
+    Fix this!
+    """
     print(f'Terminating gracefully. Changing {[o.__str__() for o in ops]} back to state "w" in database')
-
     with sqlite3.connect(db_name) as con:
         cur = con.cursor()
         inventory.change_status_in_db('w', con, cur)
-
     sys.exit(0)
 
 # deals with cancellation from running over time in server
@@ -46,6 +50,7 @@ with sqlite3.connect(db_name) as con:
         select_unfinished_inventories = (
             'SELECT * ' + 
             'FROM status ' +
+            # selects "w"(orking) status
             'WHERE status="w" ' +
             'LIMIT 1'
         )

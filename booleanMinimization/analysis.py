@@ -5,17 +5,18 @@ import sqlite3 as lite
 class DataBase:
     def __init__(self, db_path):
         self.path = db_path
-        self.lengths, self.formulas, self.status = self.get_db()
+        self.get_db()
 
     def get_db(self):
         with lite.connect(self.path) as con:
-            lengths = pd.read_sql_query('SELECT * FROM lengths', con)
-            formulas = pd.read_sql_query('SELECT * FROM formulas', con)
-            status = pd.read_sql_query('SELECT * FROM status', con)
-        return lengths, formulas, status
+            self.data = pd.read_sql_query('SELECT * FROM data', con)
+            self.status = pd.read_sql_query('SELECT * FROM status', con)
+
+    def print_with_status(self, s):
+        print(self.status[self.status['status']==s])
 
 if __name__=='__main__':
-    db = DataBase('db_numprop-3_nestlim-9.db')
-    print(db.lengths)
-    print(db.formulas)
+    db = DataBase('db_numprop-4_nestlim-9.db')
+    print(db.data)
     print(db.status)
+    # db.print_with_status('r')
