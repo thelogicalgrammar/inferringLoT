@@ -9,79 +9,79 @@ from globalvars import NUM_PROPERTIES
 #   2. They cannot correspond to sqlite keywords
 ##############################
 
-def O(a,b):
+def oO(a,b):
     # OR
     return a | b
 
-def A(a,b):
+def oA(a,b):
     # AND
     return a & b
 
-def N(a):
+def oN(a):
     # NOT
     return (1<<(2**NUM_PROPERTIES)) - 1 - a
 
-def C(a,b):
+def oC(a,b):
     # CONDITIONAL
     return N(a)|b
 
-def IC(a,b):
+def oIC(a,b):
     # INVERTED CONDITIONAL
     return N(b)|a
 
-def B(a,b):
+def oB(a,b):
     # BICONDITIONAL
     return N(a^b)
 
-def X(a,b):
+def oX(a,b):
     # XOR
     return a^b
 
-def NA(a,b):
+def oNA(a,b):
     # NAND
     return N(a&b)
 
-def NOR(a,b):
+def oNOR(a,b):
     # NOR
     return N(a|b)
 
-def NC(a,b):
+def oNC(a,b):
     # NEGATED CONDITIONAL
     # (ONLYA in Wataru's lingo)
     return a&N(b)
 
-def NIC(a,b):
+def oNIC(a,b):
     # NEGATED INVERTED CONDITIONAL
     # (ONLYB in Wataru's lingo)
     return b&N(a)
 
 
 OP_DICT = {
-    'O': O,
-    'A': A,
-    'N': N,
-    'C': C,
-    'IC': IC,
-    'B': B,
-    'X': X,
-    'NA': NA,
-    'NOR': NOR,
-    'NC': NC,
-    'NIC': NIC,
+    'oO': oO,
+    'oA': oA,
+    'oN': oN,
+    'oC': oC,
+    'oIC': oIC,
+    'oB': oB,
+    'oX': oX,
+    'oNA': oNA,
+    'oNOR': oNOR,
+    'oNC': oNC,
+    'oNIC': oNIC,
 }
 
 OP_TO_SYMBOL_DICT = {
-    'O': 'O(_,_)',
-    'A': 'A(_,_)',
-    'N': 'N(_)',
-    'C': 'C(_,_)',
-    'IC': 'IC(_,_)',
-    'B': 'B(_,_)',
-    'X': 'X(_,_)',
-    'NA': 'NA(_,_)',
-    'NOR': 'NOR(_,_)',
-    'NC': 'NC(_,_)',
-    'NIC': 'NIC(_,_)',
+    'oO': 'oO(_,_)',
+    'oA': 'oA(_,_)',
+    'oN': 'oN(_)',
+    'oC': 'oC(_,_)',
+    'oIC': 'oIC(_,_)',
+    'oB': 'oB(_,_)',
+    'oX': 'oX(_,_)',
+    'oNA': 'oNA(_,_)',
+    'oNOR': 'oNOR(_,_)',
+    'oNC': 'oNC(_,_)',
+    'oNIC': 'oNIC(_,_)',
 }
 
 
@@ -93,6 +93,6 @@ properties = define_properties(NUM_PROPERTIES)
 PROP_DICT = dict()
 # starts with p and then follows the alphabet
 for i, property_int in enumerate(properties):
-    PROP_DICT[chr(112+i)] = property_int
+    PROP_DICT['o' + chr(112+i)] = property_int
     print(bin(property_int))
 

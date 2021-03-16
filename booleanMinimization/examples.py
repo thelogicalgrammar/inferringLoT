@@ -18,8 +18,8 @@ from operators import OP_DICT, PROP_DICT
 
 create_database('database.db', OP_DICT, PROP_DICT)
 # define operators formulas
-or_op = Formula('O(_,_)')
-not_op = Formula('N(_)')
+or_op = Formula('oO(_,_)')
+not_op = Formula('oN(_)')
 ops = [not_op, or_op]
 
 # run model

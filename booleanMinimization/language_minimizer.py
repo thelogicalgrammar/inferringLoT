@@ -3,6 +3,7 @@ from globalvars import NUM_PROPERTIES, NEST_LIMIT
 import re
 import sqlite3
 
+
 class Formula:
     """
     Formula class, implements loads of useful methods
@@ -11,6 +12,41 @@ class Formula:
         self.symbol = symbol
         self.num_arguments = self.symbol.count('_')
         self.saturated = self.num_arguments == 0
+
+        # Example:
+        # A(A(_,_),B(_,_)) ->
+        # A(A(p,_),B(_,_)) ->
+        # A(A(p,q),B(_,_)) ->
+        # A(A(p,q),B(A(_,_),_)) ->
+
+        # to which operator does the argument of the next addition belong
+        # e.g. A in 'O(p,A(q,_))'
+        self.operator_next = ''
+        # match all operators
+        operators_in_sym = re.finditer(r'(?<=o)[a-zA-Z]*(?=\()', self.symbol)
+        op_positions, op_symbols = zip(*[
+            (m.group(0), m.start(0) for m in operators_in_sym)
+        ])
+
+        # whether the locus of next addition is a second argument
+        # AND THE FIRST ARGUMENT IS AN UNSATURATED OPERATOR
+        self.second_argument_next = False
+        # NOTE: double check this
+        # Store the index, in self.symbol, of the next _ to fill.
+        # If there is an unfilled argument after a filled argument
+        # fill the unfilled argument
+        if (self.index_next:=self.symbol.find('),_') != -1:
+            # the actual index of the _ is two chars after the )
+            self.index_next += 2
+            self.second_argument_next = True
+        else:
+            # if that's not found
+            # fill the first unfilled argument
+            # if formula is saturated,
+            # there are no '_' and self.index_next is -1
+            self.index_next = self.symbol.find('_')
+
+
         self.length = self.symbol.count('(')
         if self.saturated:
             self.meaning = eval(
@@ -24,11 +60,15 @@ class Formula:
         by applying the new formula to the top level
         unsaturated argument
         """
-        # TODO: double check if this works in all cases
-        newsymbol = self.symbol.replace('),_', f'),{formula.symbol}', 1)
-        if self.symbol == newsymbol:
-            newsymbol = self.symbol.replace('_', formula.symbol, 1)
-        return Formula(newsymbol)
+        # # Unfortunately asserts slow down code
+        # assert self.index_next != -1, 'Argh!'
+        newsymbol = (
+            self.symbol[:self.index_next] +
+            formula.symbol +
+            self.symbol[self.index_next+1:]
+        )
+        newformula = Formula(newsymbol)
+        return newformula
 
     def check_synonym(self, formula):
         return self.meaning == formula.meaning
@@ -110,16 +150,28 @@ class Inventory(SetOfFormulas):
             new_nodes = Layer()
             print(len(terminal_nodes))
             for current_node in terminal_nodes.formulas:
-                for a in self.formulas:
+                # find out whether I am adding to first or second argument
+                # and find out to which op's argument I am adding
+                first_to_apply_index = 0
+                if (current_node.second_argument_next and 
+                        (current_node.operator_next in symmetric_ops)):
+                    # index of the first operator to apply 
+                    # in this session
+                    current_first = 
+                    first_to_apply_index = self.formulas.index(current_first)
+                # self.formulas includes both saturated and unsaturated
+                for a in self.formulas[first_to_apply_index:]:
                     new_formula = current_node.apply(a)
                     if new_formula.saturated:
                         # add to minimal formulas
                         # if it's not there already
                         self.try_add_minimal_formula(new_formula)
+                        # TODO: also add expressions which are
+                        # equivalent for the neural nets,
+                        # e.g. if new_formula has meaning 0101,
+                        # add 1010. 
                     else:
-                        # TODO: add conditions to deal
-                        # with symmetric operators
-                        if 'n(n' not in new_formula.symbol.lower():
+                        if 'oN(oN' not in new_formula.symbol:
                             new_nodes.add_formula(new_formula)
             terminal_nodes = new_nodes
             level += 1
