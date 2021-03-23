@@ -9,81 +9,89 @@ from globalvars import NUM_PROPERTIES
 #   2. They cannot correspond to sqlite keywords
 ##############################
 
-def oO(a,b):
+def O(a,b):
     # OR
     return a | b
 
-def oA(a,b):
+def A(a,b):
     # AND
     return a & b
 
-def oN(a):
+def N(a):
     # NOT
     return (1<<(2**NUM_PROPERTIES)) - 1 - a
 
-def oC(a,b):
+def C(a,b):
     # CONDITIONAL
     return N(a)|b
 
-def oIC(a,b):
+def IC(a,b):
     # INVERTED CONDITIONAL
     return N(b)|a
 
-def oB(a,b):
+def B(a,b):
     # BICONDITIONAL
     return N(a^b)
 
-def oX(a,b):
+def X(a,b):
     # XOR
     return a^b
 
-def oNA(a,b):
+def NA(a,b):
     # NAND
     return N(a&b)
 
-def oNOR(a,b):
+def NOR(a,b):
     # NOR
     return N(a|b)
 
-def oNC(a,b):
+def NC(a,b):
     # NEGATED CONDITIONAL
-    # (ONLYA in Wataru's lingo)
+    # (ONLYA in Wataru's ling)
     return a&N(b)
 
-def oNIC(a,b):
+def NIC(a,b):
     # NEGATED INVERTED CONDITIONAL
-    # (ONLYB in Wataru's lingo)
+    # (ONLYB in Wataru's ling)
     return b&N(a)
 
 
 OP_DICT = {
-    'oO': oO,
-    'oA': oA,
-    'oN': oN,
-    'oC': oC,
-    'oIC': oIC,
-    'oB': oB,
-    'oX': oX,
-    'oNA': oNA,
-    'oNOR': oNOR,
-    'oNC': oNC,
-    'oNIC': oNIC,
+    'O': O,
+    'A': A,
+    'N': N,
+    'C': C,
+    # 'IC': IC,
+    'B': B,
+    'X': X,
+    'NA': NA,
+    'NOR': NOR,
+    'NC': NC,
+    # 'NIC': NIC,
 }
 
-OP_TO_SYMBOL_DICT = {
-    'oO': 'oO(_,_)',
-    'oA': 'oA(_,_)',
-    'oN': 'oN(_)',
-    'oC': 'oC(_,_)',
-    'oIC': 'oIC(_,_)',
-    'oB': 'oB(_,_)',
-    'oX': 'oX(_,_)',
-    'oNA': 'oNA(_,_)',
-    'oNOR': 'oNOR(_,_)',
-    'oNC': 'oNC(_,_)',
-    'oNIC': 'oNIC(_,_)',
+OP_TO_N_ARGS = {
+    'O': 2,
+    'A': 2,
+    'N': 1,
+    'C': 2,
+    # 'IC': 2,
+    'B': 2,
+    'X': 2,
+    'NA': 2,
+    'NOR': 2,
+    'NC': 2,
+    # 'NIC': 2,
 }
 
+OPS_SYMMETRIC = {
+    'O',
+    'A',
+    'B',
+    'X',
+    'NA',
+    'NOR'
+} 
 
 #######################
 # define the properties
@@ -93,6 +101,6 @@ properties = define_properties(NUM_PROPERTIES)
 PROP_DICT = dict()
 # starts with p and then follows the alphabet
 for i, property_int in enumerate(properties):
-    PROP_DICT['o' + chr(112+i)] = property_int
+    PROP_DICT[chr(112+i)] = property_int
     print(bin(property_int))
 

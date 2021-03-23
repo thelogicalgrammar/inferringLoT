@@ -1,32 +1,56 @@
-from language_minimizer import Inventory, Formula
-from utilities import define_properties, create_database
+from language_minimizer import Inventory
+from utilities import define_properties, create_database, calculate_all_inventories
 from globalvars import NUM_PROPERTIES
 from operators import OP_DICT, PROP_DICT
+from pprint import pprint
 
-# print(not_op
-#     .apply(p)
-# )
-# print(not_op
-#     .apply(or_op)
-# )
-# print(not_op
-#     .apply(or_op)
-#     .apply(p)
-#     .apply(q)
-# )
-
-
-create_database('database.db', OP_DICT, PROP_DICT)
+# create_database('database.db', OP_DICT, PROP_DICT)
 # define operators formulas
-or_op = Formula('oO(_,_)')
-not_op = Formula('oN(_)')
-ops = [not_op, or_op]
+# ops = [
+#     'O', 
+#     'A', 
+#     'N', 
+#     'C', 
+#     'IC',
+#     'B', 
+#     'X', 
+#     'NA',
+#     'NOR',
+#     'NC',
+#     'NIC',
+# ]
 
-# run model
-inv = Inventory(*ops)
-print(inv)
-inv.calculate_minimal_formulas()
-print([m.meaning for m in inv.saturated])
-print(*inv.saturated)
-inv.save_in_db()
+ops1 = [
+    # 'O', 
+    'N', 
+    'NC',
+    # 'C'
+]
 
+ops2 = [
+    # 'A',
+    'N', 
+    'NA',
+    'C',
+    # 'IC'
+]
+
+
+# create_database('database.db', OP_DICT, PROP_DICT)
+
+# # run model
+inv1 = Inventory(ops1)
+inv1.calculate_minimal_formulas()
+pprint(inv1.minimal_formulas)
+# pprint(sorted([a['length'] for a in inv1.minimal_formulas.values()]))
+
+# inv2 = Inventory(ops2)
+# inv2.calculate_minimal_formulas()
+# # pprint(inv2.minimal_formulas)
+# # pprint(sorted([a['length'] for a in inv2.minimal_formulas.values()]))
+
+# for key, form in inv1.minimal_formulas.items():
+#     print(f'{key:04b}', form['length'], inv2.minimal_formulas[key]['length'])
+
+# inv.save_in_db()
+# print(len(calculate_all_inventories(OP_DICT.keys(), PROP_DICT.keys())))

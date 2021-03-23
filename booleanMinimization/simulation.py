@@ -1,7 +1,7 @@
-from language_minimizer import Inventory, Formula
+from language_minimizer import Inventory
 from utilities import define_properties, create_database, bitslist_to_binary
 from globalvars import NUM_PROPERTIES, NEST_LIMIT
-from operators import OP_DICT, PROP_DICT, OP_TO_SYMBOL_DICT
+from operators import OP_DICT, PROP_DICT
 import sqlite3
 import signal
 import sys
@@ -22,7 +22,7 @@ def terminate_signal(signum, frame):
     rows that were started remain with status 'r' 
     Fix this!
     """
-    print(f'Terminating gracefully. Changing {[o.__str__() for o in ops]} back to state "w" in database')
+    print(f'Terminating gracefully. Changing {ops} back to state "w" in database')
     with sqlite3.connect(db_name) as con:
         cur = con.cursor()
         inventory.change_status_in_db('w', con, cur)
@@ -55,15 +55,17 @@ with sqlite3.connect(db_name) as con:
             'LIMIT 1'
         )
         inv_operators = list(cur.execute(select_unfinished_inventories))[0][:-1]
+        print(inv_operators)
         # get column names (i.e. the operators)
         # (last column is the status column and is excluded)
         colnames = [a[1] for a in list(cur.execute('PRAGMA table_info("status")'))][:-1]
-        # find formulas for all operators in inventory
-        ops = [Formula(OP_TO_SYMBOL_DICT[a]) for a,b in zip(colnames, inv_operators) if b==1]
-        print(*ops)
+
+        # for all operators in inventory
+        ops = [a for a,b in zip(colnames, inv_operators) if b==1]
+        print('ops: ', *ops)
 
         # create inventory
-        inventory = Inventory(*ops)
+        inventory = Inventory(ops)
 
         # change the status of the inventory to 'running' in the database
         inventory.change_status_in_db('r', con, cur)

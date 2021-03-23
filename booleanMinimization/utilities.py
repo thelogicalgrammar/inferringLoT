@@ -19,39 +19,39 @@ def calculate_all_inventories(ops, props):
     """
     Parameters
     ----------
-    ops, props: list of Formulas
+    ops, props: list of strings
     """
 
     f_complete = [
         # one element
-        {'oNOR',},
-        {'oNA',},
+        {'NOR',},
+        {'NA',},
         # two elements
-        {'oO', 'oN'},
-        {'oA', 'oN'},
-        {'oC', 'oN'},
-        {'oIC', 'oN'},
-        # {'oC', 'oF'},
-        # {'oIC', 'oF'},
-        {'oC', 'oXOR'},
-        {'oIC', 'oXOR'},
-        {'oC', 'oNC'},
-        {'oC', 'oNIC'},
-        {'oIC', 'oNC'},
-        {'oIC', 'oNIC'},
-        {'oNC', 'oN'},
-        {'oNIC', 'oN'},
-        # {'oNC', 'oT'},
-        # {'oNIC', 'oT'},
-        {'oNC', 'oB'},
-        {'oNIC', 'oB'},
+        {'O', 'N'},
+        {'A', 'N'},
+        {'C', 'N'},
+        # {'IC', 'N'},
+        # {'C', 'F'},
+        # {'IC', 'F'},
+        {'C', 'XOR'},
+        # {'IC', 'XOR'},
+        {'C', 'NC'},
+        # {'C', 'NIC'},
+        {'IC', 'NC'},
+        # {'IC', 'NIC'},
+        {'NC', 'N'},
+        # {'NIC', 'N'},
+        # {'NC', 'T'},
+        # {'NIC', 'T'},
+        {'NC', 'B'},
+        # {'NIC', 'B'},
         # three elements
-        # {'oO', 'oB', 'oF'},
-        {'oO', 'oB', 'oXOR'},
-        # {'oO', 'oXOR', 'oT'},
-        # {'oA', 'oB', 'oF'},
-        {'oA', 'oB', 'oXOR'},
-        # {'oA', 'oXOR', 'oT'}
+        # {'O', 'B', 'F'},
+        {'O', 'B', 'XOR'},
+        # {'O', 'XOR', 'T'},
+        # {'A', 'B', 'F'},
+        {'A', 'B', 'XOR'},
+        # {'A', 'XOR', 'T'}
     ]
 
     # calculate all combinations of operators
@@ -60,12 +60,37 @@ def calculate_all_inventories(ops, props):
     # only include the elements of the powerset that are supersets 
     # of at least one element of f_complete
     all_inventories_formulas = [
-        inv 
+        sorted(list(inv)) 
         for inv in powerset_ops
         if any([set(inv).issuperset(f_comp_inv) for f_comp_inv in f_complete])
     ]
+    # print(all_inventories_formulas)
 
-    return all_inventories_formulas
+    # operators which are equivalent in the sense of flipping
+    # the interpretations of 0 and 1 in the propositions
+    # NOTE: inventories obtained by substituting each operator
+    # with the corresponding equivalent one have equivalent minimal formula
+    # lengths for the equivalent line of the truth table
+    OP_EQUIV_DICT = {
+        'O': 'A',
+        'A': 'O',
+        'N': 'N',
+        'C': 'NIC',
+        # 'IC': 'NC',
+        'B': 'X',
+        'X': 'B',
+        'NA': 'NOR',
+        'NOR': 'NA',
+        'NC': 'IC',
+        # 'NIC': 'C'
+    }
+    # remove redundant inventories
+    all_nonredundant_inventories = []
+    for inv in all_inventories_formulas:
+        if sorted(list([OP_EQUIV_DICT[o] for o in inv])) not in all_nonredundant_inventories:
+            all_nonredundant_inventories.append(inv)
+    return all_nonredundant_inventories
+    # return all_inventories_formulas
 
 
 def define_properties(num):
@@ -95,6 +120,9 @@ def create_database(db_path, op_dict, prop_dict):
         con = sqlite3.connect(db_path)
         cur = con.cursor()
 
+        # creates the table with the status 
+        # for each inventory
+        # with default value 'w'(aiting)
         command_create_table_status = (
             'CREATE TABLE status(\n' +
             # create a column for each operator
@@ -109,7 +137,7 @@ def create_database(db_path, op_dict, prop_dict):
         cur.execute(command_create_table_status)
         
         # add one row for each inventory
-        # in the status table
+        # in the status table 
         op_columns = f'({", ".join([f"{op_name}" for op_name in op_names])})' 
         command_add_inventories_to_status = (
             f'INSERT INTO status {op_columns} '
