@@ -90,7 +90,6 @@ def calculate_all_inventories(ops, props):
         if sorted(list([OP_EQUIV_DICT[o] for o in inv])) not in all_nonredundant_inventories:
             all_nonredundant_inventories.append(inv)
     return all_nonredundant_inventories
-    # return all_inventories_formulas
 
 
 def define_properties(num):
