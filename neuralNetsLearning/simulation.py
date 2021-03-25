@@ -12,11 +12,11 @@ n_properties = 4
 # eventually reps*batch_size*num_epochs datapoints are saved
 parameters = {
     # how many times each category is taught
-    'reps': 50,
-    'batch_size': 4,
+    'reps': 25,
+    'batch_size': 8,
     # how many times the agents goes 
     # through the whole category
-    'num_epochs': 500
+    'num_epochs': 400
 }
 
 # objects has shape (2**n_properties, n_properties)
