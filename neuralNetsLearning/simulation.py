@@ -12,7 +12,7 @@ n_properties = 4
 # eventually reps*batch_size*num_epochs datapoints are saved
 parameters = {
     # how many times each category is taught
-    'reps': 100,
+    'reps': 50,
     'batch_size': 4,
     # how many times the agents goes 
     # through the whole category

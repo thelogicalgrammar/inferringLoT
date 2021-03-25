@@ -42,10 +42,14 @@ def create_database(num_props, db_path):
             'INSERT INTO status (category)\n'
             'VALUES(?);'
         )
+        # divide by two because I don't need to 
+        # study congruent categories separately
+        # e.g. no need to do both 0011 and 1100
+        n_categories = (2**(2**num_props))/2
         cur.executemany(
             command,
             # takes a list of tuples
-            [(i,) for i in range(2**(2**num_props))]
+            [(i,) for i in range(n_categories)]
         )
 
         con.commit()
