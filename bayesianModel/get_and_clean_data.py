@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 
 def get_data(path_minimal_formulas_db, path_neural_nets_db):
+    """
+    Organizes and gets the data to be analysed in the bayesian model
+    """
 
     ####### get minimal formulas
 

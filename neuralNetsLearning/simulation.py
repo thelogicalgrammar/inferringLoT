@@ -22,8 +22,9 @@ parameters = {
 # objects has shape (2**n_properties, n_properties)
 objects = np.array(list(product([0,1],repeat=n_properties)))
 
-name = '_'.join(f'{key}-{value}' for key,value in parameters.items())
-db_path = f'./{name}.db'
+# name = '_'.join(f'{key}-{value}' for key,value in parameters.items())
+# db_path = f'./{name}.db'
+db_path = '/Users/faust/Desktop/neuralNetsLoT/reps-25_batch_size-8_num_epochs-400.db'
 
 # attempt to create the database if it's not there
 create_database(n_properties, db_path)

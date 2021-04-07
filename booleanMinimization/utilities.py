@@ -175,3 +175,4 @@ def create_database(db_path, op_dict, prop_dict):
     except sqlite3.OperationalError:
         print('Database already exists!')
 
+
