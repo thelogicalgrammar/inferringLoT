@@ -1,3 +1,4 @@
+#!/bin/bash
 #SBATCH -n 1
 #SBATCH -p shared
 #SBATCH -t 5:00:00
