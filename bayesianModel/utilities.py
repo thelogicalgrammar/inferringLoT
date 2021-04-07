@@ -58,7 +58,7 @@ if __name__=='__main__':
     print("hello!")
     summarize_results(
         # '/Users/faust/Desktop/neuralNetsLoT/db_numprop-4_nestlim-100.db'
-        './db_numprop-4_nestlim-100.db'
+        '../../booleanMinimization/serverJobs/db_numprop-4_nestlim-100.db'
     )
 
 
