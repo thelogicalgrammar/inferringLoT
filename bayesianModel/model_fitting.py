@@ -5,6 +5,7 @@ import pymc3 as pm
 from pprint import pprint
 import argparse
 import pandas as pd
+import arviz as az
 
 
 def get_data(path_L, path_learningdata):
@@ -69,31 +70,46 @@ def define_model(LoT_lengths, category_i, outcome_i):
     return model
 
 
-def sample_NUTS(model):
+def sample_NUTS(model, filename):
     with model:
         trace = pm.sample(
             1000, 
             cores=1, 
     #         init='advi+adapt_diag',
-            return_inferencedata=False,
+            return_inferencedata=True,
             target_accept=0.95
         )
-    return {'trace': trace}
+    return trace
 
 
-def fit_variational(model):
+def fit_variational(model, filename):
     with model:
         fit = pm.fit(method='fullrank_advi')
-    return {'fit': fit}
+    return fit
         
 
-def sample_smc(model):
+def sample_smc(model, filename):
     with model:
         trace_smc = pm.sample_smc(
             500, 
             parallel=False
         )
-    return {'trace': trace_smc}
+    # trace = az.from_pymc3(trace_smc, model=model)
+    
+    print('Saving the trace')
+    with open(filename+'.pkl', 'wb') as openfile:
+        pickle.dump(trace_smc, openfile)
+
+    #### save everything
+    # print('Saving trace to netcfd')
+    # trace.to_netcdf(filename+'.nc')
+
+    print('Saving loglik')
+    with open('report_'+filename+'.pkl', 'wb') as openfile:
+        loglik = trace_smc.report.__dict__
+        pickle.dump(loglik, openfile)
+
+    return trace
 
 
 if __name__=='__main__':
@@ -147,18 +163,8 @@ if __name__=='__main__':
             'VI': fit_variational,
             'SMC': sample_smc
         }[args.sampler]
-        returnvalue = sampler_func(model)
-        storevalue = {
-            'model': model,
-            **returnvalue
-        }
 
-        filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}.pkl'
-        with open(filename, 'wb') as openfile:
-            pickle.dump(storevalue, openfile)
-        if args.sampler=='SMC':
-            with open('loglik_'+filename, 'wb') as openfile:
-                loglik = returnvalue['trace'].report.__dict__
-                pickle.dump(loglik, openfile)
+        filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
+        trace = sampler_func(model, filename)
     else:
         print('All values are -1')
