@@ -1,129 +1,164 @@
+import pickle
+from os import path
+import numpy as np
 import pymc3 as pm
-import theano 
+from pprint import pprint
+import argparse
+import pandas as pd
 
 
-def get_data():
+def get_data(path_L, path_learningdata):
+    """
+    Get the data, i.e. L and the learning data
+    """
 
     # L has shape (LoT, cat)
     # where the LoT index encodes the LoT
     # in the way described by the 
     # encoding file
-    L = pd.read_pickle('./L.pkl')
+    L = np.load(path_L)
 
     # note that learning costs
     # are only calculated for half of the categories
-    learning_costs_df = pd.read_pickle('../learning_costs.pkl')
-    category_i = learning_costs_df['cat']
-    outcome_i = learning_costs_df['outcome']
+    learning_data = pd.read_pickle(path_learningdata)
+    category_i, _, cost_i = learning_data.values.T
 
-    return {
-        'L': L,
-        'category_i': category_i,
-        'outcome_i': outcome_i
-    }
+    return L, category_i, cost_i
 
 
-def define_model(L, category_i, outcome_i):
+def define_model(LoT_lengths, category_i, outcome_i):
+    """
+    Parameters
+    ----------
+    LoT_lengths: array
+        Has shape (# categories). Contains the formula length for each cat
+    category_i: array
+        Has shape (# observations). Contains category of each observation.
+    outcome_i: array
+        Has shape (# observations). Contains outcome for each observation.
+    """
+    
+    length_i = LoT_lengths[category_i]
     coords = {
-        'LoT': np.arange(len(L)),
-        'cat': np.arange(L.shape[1]),
+        'cat': np.arange(len(LoT_lengths)),
         'obs': np.arange(len(category_i))
     }
-
+    
     with pm.Model(coords=coords) as model:
 
-    # #     SET DATA
-    #     L_data = pm.Data('L', L)#, dims=('LoT', 'cat'))
-    #     cat_i_data = pm.Data('cat_i', category_i)#, dims='obs')
-    #     out_i_data = pm.Data('outcome_i', outcome_i)#, dims='obs')
-
-        L_data, cat_i_data, out_i_data = L, category_i, outcome_i
-
-        L_dims = L.shape
-        n_lots, n_cats = L.shape
+#         # SET DATA
+#         LoT_lengths_data = pm.Data('LoT_lengths', LoT_lengths, dims='cat')
+#         cat_i_data = pm.Data('cat_i', category_i, dims='obs')
+        out_i_data = pm.Data('outcome_i', outcome_i, dims='obs')
+        length_i_data = pm.Data('length_i', length_i, dims='obs')
+        
 
         # SAMPLE PRIOR
-        # sample a different sigma for each category
-        sigma = pm.HalfNormal('sigma', sigma=2, dims='cat')
-        a_0 = pm.Normal('a_0', mu=0, sigma=2)
-        a_1 = pm.Normal('a_1', mu=0, sigma=2)
-
-        # BUILD LIKELIHOOD
-        # z_logp will contain the total loglik
-        # given each LoT.
-        z_logp = tt.zeros((n_lots,), dtype='float')
-        # loop over LoT index
-        for z_i in range(n_lots):
-            # zi_logp is the logprob of all observations
-            # across all categories for LoT with index z_i
-            zi_logp = 0.
-            # loop over categories
-            for cat in range(n_cats):
-                # get indices of observations with category cat
-                obs_idx = np.where(cat_i_data==cat)[0]
-                # calculate mean of costs 
-                # given LoT z_i and category cat
-                # (muZ is a scalar)
-                muZ = a_0 + a_1 * L[z_i, cat]
-                # increment logp by the joint prob
-                # of all observations for category cat
-                # given LoT with index z_i
-                zi_logp = zi_logp + tt.sum(
-                    pm.Normal
-                    .dist(mu=muZ, sd=sigma[cat])
-                    .logp(out_i_data[obs_idx])
-                )
-            z_logp = tt.set_subtensor(z_logp[z_i], zi_logp)
-        # vector with the loglik of the whole data
-        # given each LoT
-        lp3 = pm.Deterministic('z_logp', z_logp, dims='LoT')
-    #     # total logp is log(pr[X|z_1] + pr[X|z_2] + ...)
-        tot_logp = pm.math.logsumexp(z_logp)
-        pot = pm.Potential('e', tot_logp)
+        sigma = pm.HalfNormal('sigma', sigma=100)
+        a_0 = pm.Normal('a_0', mu=0, sigma=100)
+        a_1 = pm.Normal('a_1', mu=0, sigma=100)
+        
+        pm.Normal(
+            'outcome', 
+            mu=a_0+a_1*length_i_data, 
+            sigma=sigma, 
+            observed=out_i_data,
+            dims='obs'
+        )
         
     return model
 
 
-def sample_from_model(model):
+def sample_NUTS(model):
     with model:
         trace = pm.sample(
             1000, 
             cores=1, 
     #         init='advi+adapt_diag',
-            return_inferencedata=True,
+            return_inferencedata=False,
             target_accept=0.95
         )
-    return trace
-
-
-def lognormalize(x):
-    a = np.logaddexp.reduce(x)
-    return x - a
-
-
-def logmean(x, axis=0):
-    # mean in log space
-    # x is a vector of logprobs
-    return np.logaddexp.reduce(x, axis) - np.log(len(x))
-
-
-def posterior_over_LoTs(trace):
-    posterior = trace.posterior
-    # each sample contains the total loglik
-    # of the data given all other nuisance variables for that sample.
-    LoT_posterior = np.exp(lognormalize(logmean(posterior.z_logp.values[0], axis=0)))
-    return LoT_posterior
+    return {'trace': trace}
 
 
 def fit_variational(model):
     with model:
-        fit = pm.fit()
+        fit = pm.fit(method='fullrank_advi')
+    return {'fit': fit}
+        
+
+def sample_smc(model):
+    with model:
+        trace_smc = pm.sample_smc(
+            500, 
+            parallel=False
+        )
+    return {'trace': trace_smc}
 
 
 if __name__=='__main__':
-    results = get_data()
-    model = define_model(**results)
-    trace = sample_from_model(model)
-    lot_posterior = posterior_over_LoTs(trace)
 
-        
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--indexLoT',
+        type=int
+    )
+    parser.add_argument(
+        '--sampler',
+        choices=['VI', 'NUTS', 'SMC'],
+        default='SMC',
+        type=str
+    )
+    parser.add_argument(
+        '--path_L',
+        default='lengths_data.npy',
+        type=str
+    )
+    parser.add_argument(
+        '--path_learningdata',
+        default='../neuralNetsLearning/learning_costs.pkl',
+        type=str
+    )
+    args = parser.parse_args()
+
+    L, category_i, cost_i = get_data(
+        args.path_L,
+        args.path_learningdata
+    )
+
+    # add interpretation of each category where 
+    # in the input to the neural network 
+    # 1 is interpreted as False and 0 as True
+    # For instance, category 0000 in category_i
+    # would correspond to category 1111 in fliplr(L)
+    L_extended = np.concatenate((L,np.fliplr(L)))
+    LoT_lengths = L_extended[args.indexLoT]
+
+    if np.all(LoT_lengths!=-1):
+
+        model = define_model(
+            LoT_lengths,
+            category_i.astype(int),
+            cost_i
+        )
+
+        sampler_func = {
+            'NUTS': sample_NUTS,
+            'VI': fit_variational,
+            'SMC': sample_smc
+        }[args.sampler]
+        returnvalue = sampler_func(model)
+        storevalue = {
+            'model': model,
+            **returnvalue
+        }
+
+        filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}.pkl'
+        with open(filename, 'wb') as openfile:
+            pickle.dump(storevalue, openfile)
+        if args.sampler=='SMC':
+            with open('loglik_'+filename, 'wb') as openfile:
+                loglik = returnvalue['trace'].report.__dict__
+                pickle.dump(loglik, openfile)
+    else:
+        print('All values are -1')

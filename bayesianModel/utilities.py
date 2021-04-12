@@ -19,46 +19,31 @@ def bitslist_to_binary(list_bits):
     return out
 
 
-def summarize_results(db_path):
+def from_minformula_db_to_usable_array():
     """
-    Takes the database with the minimal formulas
-    and creates from it a pickle file
-    with a pandas dataframe with shape (LoT, category)
-    as well as a 
+    Take the sqlite3 output of the booleanMinimization part of the project
+    and convert it into an array with dimensions (LoTs, cats) that
+    can be used for the bayesian model.
     """
+    db_path = '/Users/faust/Desktop/neuralNetsLoT/db_numprop-4_nestlim-100.db'
     con = sql.connect(db_path)
     cur = con.cursor()
-    df = pd.read_sql(
-        'SELECT * FROM data',
-        con
-    )
-    print(df)
+    p = 'SELECT O,A,N,C,B,X,NA,NOR,NC,category,length FROM data'
+    cur.execute(p)
+    df = cur.fetchall()
+    # array containing binary category, category, and length
+    bincat_cat_length = np.array([
+        [bitslist_to_binary(a[:9]),*a[-2:]]
+        for a in df
+    ])
+    max_lot, max_cat, _ = bincat_cat_length.max(axis=0)
+    lengths = np.full((max_lot+1, max_cat+1), -1)
+    lengths[bincat_cat_length[:,0],bincat_cat_length[:,1]] = bincat_cat_length[:,2]
+    with open('lengths_data.npy', 'wb') as openfile:
+        np.save(openfile, lengths)
 
-    df['invId'] = (
-        df.loc[:,'O':'NC']
-        .astype(str)
-        .agg(''.join, axis=1)
-        .apply(lambda x: bitslist_to_binary(list(x)))
-    )
-
-    L = (
-        df[['category','length','invId']]
-        .pivot(index='invId',columns='category',values='length')
-    )
-    L.to_pickle('L.db')
-
-    df_ids = (
-        df.iloc[:,np.r_[:9,-1]]
-        .drop_duplicates()
-    )
-    df_ids.to_pickle('df_ids.db')
-    
 
 if __name__=='__main__':
     print("hello!")
-    summarize_results(
-        # '/Users/faust/Desktop/neuralNetsLoT/db_numprop-4_nestlim-100.db'
-        '../../booleanMinimization/serverJobs/db_numprop-4_nestlim-100.db'
-    )
 
 
