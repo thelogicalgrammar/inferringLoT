@@ -91,9 +91,9 @@ def fit_variational(model, filename):
 def sample_smc(model, filename):
     with model:
         trace_smc = pm.sample_smc(
-            n_steps=500, 
-            chains=4,
-            cores=1
+#             n_steps=500, 
+#             chains=4,
+#             cores=1
         )
     # trace = az.from_pymc3(trace_smc, model=model)
     
