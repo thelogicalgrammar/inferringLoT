@@ -92,23 +92,24 @@ def sample_smc(model, filename):
     with model:
         trace_smc = pm.sample_smc(
             n_steps=1000, 
-#             chains=8,
-#             parallel=False
+            chains=4,
+            parallel=False
         )
     # trace = az.from_pymc3(trace_smc, model=model)
     
-    print('Saving the trace')
-    with lzma.open(filename+'.xz', 'wb') as f:
-        pickle.dump(trace_smc, f)
+    if filename is not None:
+        print('Saving the trace')
+        with lzma.open(filename+'.xz', 'wb') as f:
+            pickle.dump(trace_smc, f)
 
-    #### save everything
-    # print('Saving trace to netcfd')
-    # trace.to_netcdf(filename+'.nc')
+        #### save everything
+        # print('Saving trace to netcfd')
+        # trace.to_netcdf(filename+'.nc')
 
-    print('Saving loglik')
-    with open('report_'+filename+'.pkl', 'wb') as openfile:
-        loglik = trace_smc.report.__dict__
-        pickle.dump(loglik, openfile)
+        print('Saving loglik')
+        with open('report_'+filename+'.pkl', 'wb') as openfile:
+            loglik = trace_smc.report.__dict__
+            pickle.dump(loglik, openfile)
 
     return trace_smc
 
