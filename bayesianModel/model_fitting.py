@@ -92,8 +92,8 @@ def sample_smc(model, filename):
     with model:
         trace_smc = pm.sample_smc(
 #             n_steps=500, 
-#             chains=4,
-#             cores=1
+            chains=6,
+            cores=6
         )
     # trace = az.from_pymc3(trace_smc, model=model)
     

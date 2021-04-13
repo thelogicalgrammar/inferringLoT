@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -n 1
+#SBATCH -n 6
 #SBATCH -p shared
 #SBATCH -t 1:00:00
 
