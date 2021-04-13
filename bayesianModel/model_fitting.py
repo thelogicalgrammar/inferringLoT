@@ -120,6 +120,20 @@ if __name__=='__main__':
         type=int
     )
     parser.add_argument(
+        '--useEffectiveIndex',
+        help=(
+            'The LoTs are stored in the file so that '
+            'at many indices there are only -1s. '
+            'In this case indexLoT range from 0 to 1023. '
+            'When useEffectiveIndex is 1 (True), the indices '
+            'with -1 are excluded, and indexLoT ranges from 0 to 837. '
+            'Useful when there is a limit in the server on '
+            'the number of jobs in a batchjob!'
+        ),
+        type=int,
+        default=1
+    )
+    parser.add_argument(
         '--sampler',
         choices=['VI', 'NUTS', 'SMC'],
         default='SMC',
@@ -148,7 +162,23 @@ if __name__=='__main__':
     # For instance, category 0000 in category_i
     # would correspond to category 1111 in fliplr(L)
     L_extended = np.concatenate((L,np.fliplr(L)))
-    LoT_lengths = L_extended[args.indexLoT]
+    
+    if bool(args.useEffectiveIndex):
+        print('Using effective index for LoT')
+        effective_LoTs_indices = np.argwhere(np.all(L_extended!=-1,axis=1)).flatten()
+        try:
+            indexLoT = effective_LoTs_indices[args.indexLoT]
+        except IndexError:
+            print('indexLoT is too high: use smaller index')
+            raise
+    else:
+        indexLoT = args.indexLoT
+        
+    try:
+        LoT_lengths = L_extended[indexLoT]
+    except IndexError:
+        print('Maybe you meant to use effective index? See help.')
+        raise
 
     if np.all(LoT_lengths!=-1):
 
@@ -167,4 +197,4 @@ if __name__=='__main__':
         filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
         trace = sampler_func(model, filename)
     else:
-        print('All values are -1')
+        print('All values for the specific LoT are -1')
