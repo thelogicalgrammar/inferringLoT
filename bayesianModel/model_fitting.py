@@ -6,6 +6,7 @@ from pprint import pprint
 import argparse
 import pandas as pd
 import arviz as az
+import lzma
 
 
 def get_data(path_L, path_learningdata):
@@ -40,19 +41,8 @@ def define_model(LoT_lengths, category_i, outcome_i):
     """
     
     length_i = LoT_lengths[category_i]
-    coords = {
-        'cat': np.arange(len(LoT_lengths)),
-        'obs': np.arange(len(category_i))
-    }
     
-    with pm.Model(coords=coords) as model:
-
-#         # SET DATA
-#         LoT_lengths_data = pm.Data('LoT_lengths', LoT_lengths, dims='cat')
-#         cat_i_data = pm.Data('cat_i', category_i, dims='obs')
-        out_i_data = pm.Data('outcome_i', outcome_i, dims='obs')
-        length_i_data = pm.Data('length_i', length_i, dims='obs')
-        
+    with pm.Model() as model:
 
         # SAMPLE PRIOR
         sigma = pm.HalfNormal('sigma', sigma=100)
@@ -61,10 +51,9 @@ def define_model(LoT_lengths, category_i, outcome_i):
         
         pm.Normal(
             'outcome', 
-            mu=a_0+a_1*length_i_data, 
+            mu=a_0+a_1*length_i, 
             sigma=sigma, 
-            observed=out_i_data,
-            dims='obs'
+            observed=outcome_i
         )
         
     return model
@@ -79,12 +68,23 @@ def sample_NUTS(model, filename):
             return_inferencedata=True,
             target_accept=0.95
         )
+    print('Saving the trace')
+    with lzma.open(filename+'.xz', 'wb') as f:
+        pickle.dump(trace_smc, f)
     return trace
 
 
 def fit_variational(model, filename):
     with model:
-        fit = pm.fit(method='fullrank_advi')
+        fit = pm.fit(
+            n=50000,
+            method='advi'
+        )
+    
+    print('Saving the fit')
+    with lzma.open(filename+'.xz', 'wb') as f:
+        pickle.dump(trace_smc, f)
+        
     return fit
         
 
@@ -97,8 +97,8 @@ def sample_smc(model, filename):
     # trace = az.from_pymc3(trace_smc, model=model)
     
     print('Saving the trace')
-    with open(filename+'.pkl', 'wb') as openfile:
-        pickle.dump(trace_smc, openfile)
+    with lzma.open(filename+'.xz', 'wb') as f:
+        pickle.dump(trace_smc, f)
 
     #### save everything
     # print('Saving trace to netcfd')
@@ -109,7 +109,7 @@ def sample_smc(model, filename):
         loglik = trace_smc.report.__dict__
         pickle.dump(loglik, openfile)
 
-    return trace
+    return trace_smc
 
 
 if __name__=='__main__':
@@ -127,12 +127,12 @@ if __name__=='__main__':
     )
     parser.add_argument(
         '--path_L',
-        default='lengths_data.npy',
+        default='../data/lengths_data.npy',
         type=str
     )
     parser.add_argument(
         '--path_learningdata',
-        default='../neuralNetsLearning/learning_costs.pkl',
+        default='../data/learning_costs.pkl',
         type=str
     )
     args = parser.parse_args()
