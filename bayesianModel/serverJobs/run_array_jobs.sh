@@ -1,2 +1,2 @@
 #!/bin/sh
-sbatch -a 0-837 ../run_single_LoT.py
+sbatch -a 0-837 ../run_single_LoT.sh
