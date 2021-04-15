@@ -24,9 +24,10 @@ def plot_data_fitted(trace, LoT, category_i, outcome_i, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     
-    ax.scatter(LoT[category_i.astype(int)], outcome_i)
+    category_lengths = LoT[category_i.astype(int)]
+    ax.scatter(category_lengths, outcome_i)
 
-    xs = np.linspace(0,10,2)
+    xs = np.linspace(0,category_lengths.max(),2)
     for a0,a1,s in zip(a0_trace, a1_trace, sigma_trace):
         ax.plot(
             xs,
