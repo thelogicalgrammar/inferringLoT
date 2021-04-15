@@ -13,7 +13,7 @@ def create_sample_data():
     sigma = 2
     a_0, a_1 = 0, 1
     # true LoT
-    z = 2
+    z = 0
 
     # shape (# LoTs, # categories)
     a = np.array([

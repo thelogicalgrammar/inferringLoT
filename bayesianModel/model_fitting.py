@@ -83,11 +83,11 @@ def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
     return model
 
 
-def sample_NUTS(model, filename):
+def sample_NUTS(model, filename, cores=4):
     with model:
         trace = pm.sample(
             1000, 
-            cores=1, 
+            cores=cores, 
     #         init='advi+adapt_diag',
             return_inferencedata=True,
             target_accept=0.95
@@ -193,7 +193,7 @@ if __name__=='__main__':
         args.path_learningdata
     )
 
-    L_extended, effective_LoT_indices = get_extended_L_and_effective(L)
+    L_extended, effective_LoTs_indices = get_extended_L_and_effective(L)
         
     if args.modelType=='byLoT':
                 

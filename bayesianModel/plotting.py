@@ -10,7 +10,7 @@ from os import path
 import lzma
 
 
-def plot_data_fitted(trace, LoT, category_i, outcome_i, ax=None):
+def plot_data_fitted(trace, LoT, category_i, outcome_i, fig_ax=None):
     
     if type(trace) == az.data.inference_data.InferenceData:
         a0_trace = trace.posterior['a_0'].values.flatten()
@@ -21,8 +21,10 @@ def plot_data_fitted(trace, LoT, category_i, outcome_i, ax=None):
         a1_trace = trace['a_1'].flatten()
         sigma_trace = trace['sigma'].flatten()
     
-    if ax is None:
+    if fig_ax is None:
         fig, ax = plt.subplots()
+    else:
+        fig, ax = fig_ax
     
     category_lengths = LoT[category_i.astype(int)]
     ax.scatter(category_lengths, outcome_i)
@@ -37,7 +39,7 @@ def plot_data_fitted(trace, LoT, category_i, outcome_i, ax=None):
             linewidth=1
         )
     
-    return fig, ax
+    return fig_ax
     
     
 def plot_all_in_folder(fglob, path_L, path_learningdata):
@@ -52,7 +54,14 @@ def plot_all_in_folder(fglob, path_L, path_learningdata):
         with lzma.open(fpath, 'rb') as f:
             trace = pickle.load(f)
         real_index = effective_LoT_indices[int(params['LoT'])]
-        fig, ax = plot_data_fitted(trace, L_extended[real_index], category_i, cost_i)
+        fig, ax = plt.subplots()
+        plot_data_fitted(
+            trace, 
+            L_extended[real_index], 
+            category_i, 
+            cost_i,
+            fig_ax=(fig,ax)
+        )
         fig.savefig(f'./realLoTIndex-{real_index}.png')
         
 
