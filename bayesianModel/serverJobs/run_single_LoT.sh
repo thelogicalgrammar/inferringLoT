@@ -9,9 +9,7 @@ module load Python/3.8.2-GCCcore-9.3.0
 source ../../../venv/bin/activate
 
 python -u ../model_fitting.py byLoT \
-# NUTS, SMC, or VI
 --sampler NUTS \
-# SLURM_ARRAY_TASK_ID is defined by run_array_jobs.sh
 --indexLoT $SLURM_ARRAY_TASK_ID \
 --path_learningdata '../../data/learning_costs.pkl' \
 --path_L '../../data/lengths_data.npy'
