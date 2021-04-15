@@ -135,22 +135,21 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     
-    parser.add_argument(
-        '--path_L',
-        default='../data/lengths_data.npy',
-        type=str
-    )
-    parser.add_argument(
-        '--path_learningdata',
-        default='../data/learning_costs.pkl',
-        type=str
-    )
-    
     subparsers = parser.add_subparsers(dest='modelType')
     parser_byLoT = subparsers.add_parser('byLoT')
     parser_joint = subparsers.add_parser('joint')
 
     ####### add arguments to parser ByLoT
+    parser_byLoT.add_argument(
+        '--path_L',
+        default='../data/lengths_data.npy',
+        type=str
+    )
+    parser_byLoT.add_argument(
+        '--path_learningdata',
+        default='../data/learning_costs.pkl',
+        type=str
+    )
     parser_byLoT.add_argument(
         '--indexLoT',
         type=int,
