@@ -41,7 +41,10 @@ def plot_data_fitted(trace, LoT, category_i, outcome_i, ax=None):
     
 def plot_all_in_folder(fglob='serverJobs/*.xz'):
     
-    L, category_i, cost_i = get_data()
+    L, category_i, cost_i = get_data(
+        path_L='../../data/lengths_data.npy', 
+        path_learningdata='../../data/learning_costs.pkl'
+    )
     L_extended, effective_LoT_indices = get_extended_L_and_effective(L)
     for fpath in glob(fglob):
         fname = path.splitext(path.basename(fpath))[0] 
