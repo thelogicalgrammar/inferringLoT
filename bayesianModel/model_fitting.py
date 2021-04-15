@@ -6,29 +6,53 @@ from pprint import pprint
 import argparse
 import pandas as pd
 import arviz as az
+import theano 
+import theano.tensor as T
 import lzma
+from utilities import get_data, get_extended_L_and_effective
 
 
-def get_data(path_L, path_learningdata):
+def define_model_joint(L, category_i, outcome_i):
     """
-    Get the data, i.e. L and the learning data
+    Parameters
+    ----------
+    L: array
+        Shape (# LoTs, # categories)
+    category_i, outcome_i: arrays
+        Shape (# observations)
     """
+    # TODO: CHANGE THIS!
+    
+    with pm.Model() as model:
+        
+        # sample one set of parameters for each LoT
+        sigma = pm.HalfNormal('sigma', sigma=5, shape=len(L))
+        a_0 = pm.Normal('a_0', mu=0, sigma=5, shape=len(L))
+        a_1 = pm.Normal('a_1', mu=0, sigma=5, shape=len(L))
+        # sample a true LoT
+        z = pm.Categorical('z', np.ones(L.shape[0]))
 
-    # L has shape (LoT, cat)
-    # where the LoT index encodes the LoT
-    # in the way described by the 
-    # encoding file
-    L = np.load(path_L)
+        mu_i = a_0[z] + a_1[z] * theano.shared(L)[z][category_i]
 
-    # note that learning costs
-    # are only calculated for half of the categories
-    learning_data = pd.read_pickle(path_learningdata)
-    category_i, _, cost_i = learning_data.values.T
+        outcome_i = pm.Normal(
+            'outcomes',
+            mu=mu_i,
+            sigma=sigma[z],
+            observed=outcome_i,
+        )
 
-    return L, category_i, cost_i
+        trace = pm.sample(
+            cores=1,
+            return_inferencedata=True,
+            nuts={'target_accept':0.99},
+            draws=5000,
+            chains=5
+        )
+
+    return {'model': model, 'trace': trace}
 
 
-def define_model(LoT_lengths, category_i, outcome_i):
+def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
     """
     Parameters
     ----------
@@ -68,9 +92,10 @@ def sample_NUTS(model, filename):
             return_inferencedata=True,
             target_accept=0.95
         )
-    print('Saving the trace')
-    with lzma.open(filename+'.xz', 'wb') as f:
-        pickle.dump(trace_smc, f)
+    if filename is not None:
+        print('Saving the trace')
+        with lzma.open(filename+'.xz', 'wb') as f:
+            pickle.dump(trace_smc, f)
     return trace
 
 
@@ -80,10 +105,10 @@ def fit_variational(model, filename):
             n=50000,
             method='advi'
         )
-    
-    print('Saving the fit')
-    with lzma.open(filename+'.xz', 'wb') as f:
-        pickle.dump(trace_smc, f)
+    if filename is not None:
+        print('Saving the fit')
+        with lzma.open(filename+'.xz', 'wb') as f:
+            pickle.dump(trace_smc, f)
         
     return fit
         
@@ -117,11 +142,29 @@ def sample_smc(model, filename):
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
+    
     parser.add_argument(
-        '--indexLoT',
-        type=int
+        '--path_L',
+        default='../data/lengths_data.npy',
+        type=str
     )
     parser.add_argument(
+        '--path_learningdata',
+        default='../data/learning_costs.pkl',
+        type=str
+    )
+    
+    subparsers = parser.add_subparsers(dest='modelType')
+    parser_byLoT = subparsers.add_parser('byLoT')
+    parser_joint = subparsers.add_parser('joint')
+
+    ####### add arguments to parser ByLoT
+    parser_byLoT.add_argument(
+        '--indexLoT',
+        type=int,
+        required=True
+    )
+    parser_byLoT.add_argument(
         '--useEffectiveIndex',
         help=(
             'The LoTs are stored in the file so that '
@@ -135,68 +178,60 @@ if __name__=='__main__':
         type=int,
         default=1
     )
-    parser.add_argument(
+    parser_byLoT.add_argument(
         '--sampler',
         choices=['VI', 'NUTS', 'SMC'],
         default='SMC',
         type=str
     )
-    parser.add_argument(
-        '--path_L',
-        default='../data/lengths_data.npy',
-        type=str
-    )
-    parser.add_argument(
-        '--path_learningdata',
-        default='../data/learning_costs.pkl',
-        type=str
-    )
+    
     args = parser.parse_args()
+    print(vars(args))
 
     L, category_i, cost_i = get_data(
         args.path_L,
         args.path_learningdata
     )
 
-    # add interpretation of each category where 
-    # in the input to the neural network 
-    # 1 is interpreted as False and 0 as True
-    # For instance, category 0000 in category_i
-    # would correspond to category 1111 in fliplr(L)
-    L_extended = np.concatenate((L,np.fliplr(L)))
-    
-    if bool(args.useEffectiveIndex):
-        print('Using effective index for LoT')
-        effective_LoTs_indices = np.argwhere(np.all(L_extended!=-1,axis=1)).flatten()
-        try:
-            indexLoT = effective_LoTs_indices[args.indexLoT]
-        except IndexError:
-            print('indexLoT is too high: use smaller index')
-            raise
-    else:
-        indexLoT = args.indexLoT
+    L_extended, effective_LoT_indices = get_extended_L_and_effective(L)
         
-    try:
-        LoT_lengths = L_extended[indexLoT]
-    except IndexError:
-        print('Maybe you meant to use effective index? See help.')
-        raise
+    if args.modelType=='byLoT':
+                
+        if bool(args.useEffectiveIndex):
+            print('Using effective index for LoT')
+            try:
+                indexLoT = effective_LoTs_indices[args.indexLoT]
+            except IndexError:
+                print('indexLoT is too high: use smaller index')
+                raise
+        else:
+            indexLoT = args.indexLoT
 
-    if np.all(LoT_lengths!=-1):
+        try:
+            LoT_lengths = L_extended[indexLoT]
+        except IndexError:
+            print('Maybe you meant to use effective index? See help.')
+            raise
 
-        model = define_model(
-            LoT_lengths,
-            category_i.astype(int),
-            cost_i
-        )
+        if np.all(LoT_lengths!=-1):
 
-        sampler_func = {
-            'NUTS': sample_NUTS,
-            'VI': fit_variational,
-            'SMC': sample_smc
-        }[args.sampler]
+            model = define_model_singleLoT(
+                LoT_lengths,
+                category_i.astype(int),
+                cost_i
+            )
 
-        filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
-        trace = sampler_func(model, filename)
-    else:
-        print('All values for the specific LoT are -1')
+            sampler_func = {
+                'NUTS': sample_NUTS,
+                'VI': fit_variational,
+                'SMC': sample_smc
+            }[args.sampler]
+
+            filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
+            trace = sampler_func(model, filename)
+        else:
+            print('All values for the specific LoT are -1')
+    
+    elif args.modelType=='joint':
+        
+        pass
