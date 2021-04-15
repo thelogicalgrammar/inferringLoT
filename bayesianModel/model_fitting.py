@@ -41,15 +41,7 @@ def define_model_joint(L, category_i, outcome_i):
             observed=outcome_i,
         )
 
-        trace = pm.sample(
-            cores=1,
-            return_inferencedata=True,
-            nuts={'target_accept':0.99},
-            draws=5000,
-            chains=5
-        )
-
-    return {'model': model, 'trace': trace}
+    return model
 
 
 def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
@@ -234,4 +226,11 @@ if __name__=='__main__':
     
     elif args.modelType=='joint':
         
-        pass
+        define_model_joint(L, category_i, outcome_i)
+        trace = pm.sample(
+            cores=4,
+            return_inferencedata=True,
+            nuts={'target_accept':0.99},
+            draws=5000,
+            chains=5
+        )
