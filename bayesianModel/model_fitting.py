@@ -84,6 +84,7 @@ def sample_NUTS(model, filename, cores=4):
             return_inferencedata=True,
             target_accept=0.95
         )
+    print('Finished the NUTS fitting')
     if filename is not None:
         print('Saving the trace')
         with lzma.open(filename+'.xz', 'wb') as f:
@@ -225,7 +226,7 @@ if __name__=='__main__':
     
     elif args.modelType=='joint':
         
-        define_model_joint(L, category_i, outcome_i)
+        model = define_model_joint(L, category_i, outcome_i)
         trace = pm.sample(
             cores=4,
             return_inferencedata=True,
