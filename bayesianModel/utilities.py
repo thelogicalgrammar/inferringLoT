@@ -31,7 +31,15 @@ def get_data(path_L='../data/lengths_data.npy', path_learningdata='../data/learn
     return L, category_i, cost_i
 
 
+def get_params_from_fpath(fpath):
+    fname = path.splitext(path.basename(fpath))[0] 
+    params = dict(s.split('-') for s in fname.split('_'))
+    return params
+
+
 def get_extended_L_and_effective(L):
+    """
+    """
     # add interpretation of each category where 
     # in the input to the neural network 
     # 1 is interpreted as False and 0 as True

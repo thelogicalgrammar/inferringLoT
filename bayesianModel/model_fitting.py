@@ -87,8 +87,9 @@ def sample_NUTS(model, filename, cores=4):
     print('Finished the NUTS fitting')
     if filename is not None:
         print('Saving the trace')
-        with lzma.open(filename+'.xz', 'wb') as f:
-            pickle.dump(trace_smc, f)
+        # with lzma.open(filename+'.xz', 'wb') as f:
+        with open(filename+'pkl', 'wb') as f:
+            pickle.dump(trace, f)
     return trace
 
 
@@ -101,7 +102,7 @@ def fit_variational(model, filename):
     if filename is not None:
         print('Saving the fit')
         with lzma.open(filename+'.xz', 'wb') as f:
-            pickle.dump(trace_smc, f)
+            pickle.dump(trace, f)
         
     return fit
         
