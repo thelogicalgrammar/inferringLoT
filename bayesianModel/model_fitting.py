@@ -10,6 +10,7 @@ import theano
 import theano.tensor as T
 import lzma
 from utilities import get_data, get_extended_L_and_effective
+from pymc3.variational.callbacks import CheckParametersConvergence
 
 
 def define_model_joint(L, category_i, outcome_i):
@@ -99,17 +100,24 @@ def sample_NUTS(model, filename, cores=4):
 
 def fit_variational(model, filename):
     with model:
-        fit = pm.fit(
+        advi = pm.FullRankADVI()
+        # advi = pm.ADVI()
+        tracker = pm.callbacks.Tracker(
+            mean=advi.approx.mean.eval,  # callable that returns mean
+            std=advi.approx.std.eval,  # callable that returns std
+        )
+        fit = advi.fit(
             n=100000,
             # method='advi',
-            method='fullrank_advi'
+            # method='fullrank_advi',
+            callbacks=[tracker, CheckParametersConvergence()]
         )
     if filename is not None:
         print('Saving the fit')
         with lzma.open(filename+'.xz', 'wb') as f:
             pickle.dump(fit, f)
         
-    return fit
+    return fit, tracker
         
 
 def sample_smc(model, filename):
