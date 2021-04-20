@@ -10,6 +10,7 @@ import arviz as az
 from pprint import pprint
 from scipy import stats
 import sqlite3 as sql
+from os import path
 
 
 def get_data(path_L='../data/lengths_data.npy', path_learningdata='../data/learning_costs.pkl'):

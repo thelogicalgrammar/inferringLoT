@@ -10,7 +10,7 @@ source ../../../venv/bin/activate
 
 script -c \
 "python -u ../model_fitting.py byLoT \
---sampler NUTS \
+--sampler VI \
 --indexLoT $SLURM_ARRAY_TASK_ID \
 --path_learningdata '../../data/learning_costs.pkl' \
 --path_L '../../data/lengths_data.npy'" \

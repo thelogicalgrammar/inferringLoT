@@ -79,6 +79,7 @@ def sample_NUTS(model, filename, cores=4):
     with model:
         trace = pm.sample(
             1000, 
+            # tune=1000,
             cores=cores, 
     #         init='advi+adapt_diag',
             return_inferencedata=True,
@@ -88,21 +89,25 @@ def sample_NUTS(model, filename, cores=4):
     if filename is not None:
         print('Saving the trace')
         # with lzma.open(filename+'.xz', 'wb') as f:
-        with open(filename+'pkl', 'wb') as f:
-            pickle.dump(trace, f)
+        # with open(filename+'.pkl', 'wb') as f:
+        #     pickle.dump(trace, f)
+        # az.to_netcdf(trace, filename)
+        trace.to_json(filename)
+        print('Finished saving the trace')
     return trace
 
 
 def fit_variational(model, filename):
     with model:
         fit = pm.fit(
-            n=50000,
-            method='advi'
+            n=100000,
+            # method='advi',
+            method='fullrank_advi'
         )
     if filename is not None:
         print('Saving the fit')
         with lzma.open(filename+'.xz', 'wb') as f:
-            pickle.dump(trace, f)
+            pickle.dump(fit, f)
         
     return fit
         
