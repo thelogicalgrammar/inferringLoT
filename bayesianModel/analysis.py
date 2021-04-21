@@ -11,6 +11,7 @@ from os import path
 
 def run_model_comparison(fglob):
     """
+    Run loo based model comparison
     """
     # has {modelname: trace}
     traces_dict = dict()

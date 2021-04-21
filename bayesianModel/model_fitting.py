@@ -45,7 +45,7 @@ def define_model_joint(L, category_i, outcome_i):
     return model
 
 
-def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
+def define_model_singleLoT(length_i, outcome_i, tot_size=None):
     """
     Parameters
     ----------
@@ -56,8 +56,11 @@ def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
     outcome_i: array
         Has shape (# observations). Contains outcome for each observation.
     """
-    
-    length_i = LoT_lengths[category_i]
+
+    # total_size is important when using minibatches
+    # with VI
+    if tot_size is None:
+        tot_size = len(length_i)
     
     with pm.Model() as model:
 
@@ -70,7 +73,8 @@ def define_model_singleLoT(LoT_lengths, category_i, outcome_i):
             'outcome', 
             mu=a_0+a_1*length_i, 
             sigma=sigma, 
-            observed=outcome_i
+            observed=outcome_i,
+            total_size=tot_size
         )
         
     return model
@@ -100,22 +104,31 @@ def sample_NUTS(model, filename, cores=4):
 
 def fit_variational(model, filename):
     with model:
-        advi = pm.FullRankADVI()
-        # advi = pm.ADVI()
+        # advi = pm.FullRankADVI()
+        advi = pm.ADVI()
         tracker = pm.callbacks.Tracker(
             mean=advi.approx.mean.eval,  # callable that returns mean
             std=advi.approx.std.eval,  # callable that returns std
         )
         fit = advi.fit(
-            n=100000,
+            n=500000,
             # method='advi',
             # method='fullrank_advi',
-            callbacks=[tracker, CheckParametersConvergence()]
+            callbacks=[
+                tracker,
+                CheckParametersConvergence(
+                    tolerance=1e-4,
+                    diff='absolute'
+                )
+            ]
         )
     if filename is not None:
         print('Saving the fit')
         with lzma.open(filename+'.xz', 'wb') as f:
-            pickle.dump(fit, f)
+            pickle.dump({
+                    'fit': fit,
+                    'tracker': tracker
+                }, f)
         
     return fit, tracker
         
@@ -219,24 +232,31 @@ if __name__=='__main__':
             print('Maybe you meant to use effective index? See help.')
             raise
 
-        if np.all(LoT_lengths!=-1):
+        assert np.all(LoT_lengths!=-1),'All values for the LoT=-1'
 
+        length_i = LoT_lengths[category_i.astype(int)]
+        filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
+
+        if args.sampler=='NUTS':
+            model = define_model_singleLoT(length_i, cost_i)
+            trace = sample_NUTS(model, filename)
+
+        elif args.sampler=='VI':
+            length_i_mb = pm.Minibatch(length_i, batch_size=2000)
+            cost_i_mb = pm.Minibatch(cost_i, batch_size=2000)
             model = define_model_singleLoT(
-                LoT_lengths,
-                category_i.astype(int),
-                cost_i
+                length_i_mb,
+                cost_i_mb,
+                tot_size=len(cost_i)
             )
+            fit, tracker = fit_variational(model, filename)
 
-            sampler_func = {
-                'NUTS': sample_NUTS,
-                'VI': fit_variational,
-                'SMC': sample_smc
-            }[args.sampler]
+        elif args.sampler=='SMC':
+            model = define_model_singleLoT(length_i, cost_i)
+            trace = sample_smc(model, filename)
 
-            filename = f'sampler-{args.sampler}_LoT-{args.indexLoT}'
-            trace = sampler_func(model, filename)
         else:
-            print('All values for the specific LoT are -1')
+            raise InputError('Unknown sampler')
     
     elif args.modelType=='joint':
         
