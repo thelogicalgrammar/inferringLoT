@@ -5,9 +5,34 @@ import seaborn as sns
 import arviz as az
 from glob import glob
 from pprint import pprint
-from utilities import get_data, get_extended_L_and_effective, get_params_from_fpath
+from utilities import (get_data, get_extended_L_and_effective, 
+                       get_params_from_fpath, LoT_indices_to_operators)
 from os import path
 import lzma
+
+
+def plot_violin_reg(X, y, ax=None):
+    """
+    
+    """
+    
+    if ax is None:
+        fig, ax = plt.subplots()
+        
+    df = pd.DataFrame({'x':X.flatten(), 'y':y})
+    sns.violinplot(
+        data=df,
+        y='y',
+        x='x',
+        scale='count',
+        color='lightblue',
+        ax=ax
+    )
+    ax.plot(
+        X.flatten(), 
+        y_hat
+    )
+    return ax
 
 
 def plot_data_fitted(trace, LoT, category_i, outcome_i, fig_ax=None):
@@ -44,13 +69,20 @@ def plot_data_fitted(trace, LoT, category_i, outcome_i, fig_ax=None):
 def plot_all_in_folder(fglob, path_L, path_learningdata):
     L, category_i, cost_i = get_data(path_L, path_learningdata)
     L_extended, effective_LoT_indices = get_extended_L_and_effective(L)
+    ops_list = LoT_indices_to_operators(
+        effective_LoT_indices,
+        use_whole_effective_LoT_indices=True, 
+        return_nested_list=True
+    )
     print('Starting to plot')
     for fpath in glob(fglob):
         print('f: ', fpath)
         params = get_params_from_fpath(fpath)
         with lzma.open(fpath, 'rb') as f:
             trace = pickle.load(f)
-        real_index = effective_LoT_indices[int(params['LoT'])]
+        effective_index_LoT = int(params['LoT'])
+        real_index = effective_LoT_indices[effective_index_LoT]
+        ops = ops_list[effective_index_LoT]
         fig, ax = plt.subplots()
         plot_data_fitted(
             trace, 
@@ -59,6 +91,7 @@ def plot_all_in_folder(fglob, path_L, path_learningdata):
             cost_i,
             fig_ax=(fig,ax)
         )
+        ax.set_title(ops)
         fig.savefig(f'./realLoTIndex-{real_index}.png')
         
 

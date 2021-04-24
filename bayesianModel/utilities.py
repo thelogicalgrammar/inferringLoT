@@ -13,6 +13,39 @@ import sqlite3 as sql
 from os import path
 
 
+def LoT_indices_to_operators(indices, use_whole_effective_LoT_indices=False, return_nested_list=False):
+    if use_whole_effective_LoT_indices: 
+        assert len(indices) == 838, 'Indices does not have the right length!'
+        indices = indices[:len(indices)//2]
+    else:
+        assert len(indices) <= np.log2(9), (
+            'Too many indices. Are you using the whole effective_LoT_indices'
+            'produced by get_extended_L_and_effective(L) below?'
+            'That no good cause the second half of effective_LoT_indices refers'
+            'to the alternative interpretation of 0/1 as true/false.'
+            'Only use first half!'
+        )
+    lists = np.array([list(f'{x:09b}') for x in indices])
+    columns = ['O','A','N','C','B','X','NA','NOR','NC']
+    if use_whole_effective_LoT_indices:
+        # repeat the indices twice to cover the second repetition of the
+        # LoTs with the opposite interpretation of 0/1
+        lists = np.tile(lists,(2,1))
+        
+    df = pd.DataFrame(lists,columns=columns,dtype=bool)
+    
+    if return_nested_list:
+        # Go from df to a list of lists, where each sublist contains
+        # the names of the operators in that LoT
+        return [
+            [a for a in sublist if a!=0]
+            for sublist in
+            np.where(df.values, df.columns.values[None], 0).tolist()
+        ]
+    else:
+        return df
+
+
 def get_saved_categories(cur):
     instruction = (
         'SELECT category, count(category) '
@@ -96,6 +129,13 @@ def get_params_from_fpath(fpath):
 
 def get_extended_L_and_effective(L):
     """
+    Parameters
+    ----------
+    L: array
+        Shape (# LoTs, # categories)
+        Contains the length of the minimal formula of each category in each LoT
+        (note that I only recorded the learning efforts for half of the categories,
+        since the NNs show symmetric behaviour for substitution of 0/1 in the input)
     """
     # add interpretation of each category where 
     # in the input to the neural network 
@@ -103,6 +143,8 @@ def get_extended_L_and_effective(L):
     # For instance, category 0000 in category_i
     # would correspond to category 1111 in fliplr(L)
     L_extended = np.concatenate((L,np.fliplr(L)))
+    # find the indices where there are minimal formulas length
+    # (namely, those that are functionally complete)
     effective_LoTs_indices = np.argwhere(np.all(L_extended!=-1,axis=1)).flatten()
     return L_extended, effective_LoTs_indices
 
