@@ -27,7 +27,7 @@ def plot_reg_line(length_i, reg, ax, color):
         obtained from analysis.run_frequentist_regression
     """
     a, b = reg.intercept_, reg.coef_
-    xs = np.linspace(0,lenght_i.max(),10)
+    xs = np.linspace(0,length_i.max(),10)
     ax.plot(
         xs, 
         a+xs*b,
