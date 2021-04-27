@@ -203,5 +203,5 @@ if __name__=='__main__':
         path_learningdata='../../data/learning_costs.pkl',
         folder_smc='../../files_from_runs_SMC', 
         folder_vi='../../files_from_runs_VI', 
-        freq_reg='../freq_reg.pkl'
+        path_freq_reg='../freq_reg.pkl'
     )
