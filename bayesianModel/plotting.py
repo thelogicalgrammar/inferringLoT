@@ -155,7 +155,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
         if folder_vi is not None:
             color_vi = 'green'
             fpath_vi = folder_vi+f'/sampler-VI_LoT-{i}.xz'
-            with open(fpath_vi, 'rb') as f:
+            with lzma.open(fpath_vi, 'rb') as f:
                 fit_data = pickle.load(f)
             model = fit_data['model']
             fit = fit_data['fit']
