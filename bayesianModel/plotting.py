@@ -157,7 +157,6 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
             fpath_vi = folder_vi+f'/sampler-VI_LoT-{i}.xz'
             with lzma.open(fpath_vi, 'rb') as f:
                 fit_data = pickle.load(f)
-            model = fit_data['model']
             fit = fit_data['fit']
             trace_vi = fit.sample(1000)
             plot_data_fitted(
