@@ -117,7 +117,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
     
     if path_freq_reg is not None:
         with open(path_freq_reg, 'rb') as openf:
-            regs, AICs = pickle.load(path_freq_reg)
+            regs, AICs = pickle.load(openf)
     
     # i is the effective index here
     for i in range(len(L)):
