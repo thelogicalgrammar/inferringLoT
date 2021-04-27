@@ -137,7 +137,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
         if folder_smc is not None:
             color_smc = 'red'
             fpath_smc = folder_smc+f'/sampler-SMC_LoT-{i}.xz'
-            with lzma.open(fpath, 'rb') as f:
+            with lzma.open(fpath_smc, 'rb') as f:
                 trace_smc = pickle.load(f)
             plot_data_fitted(
                 trace_smc,
@@ -146,7 +146,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
                 color=color_smc
             )
             fpath_smc_report = folder_smc+f'/report_sampler-SMC_LoT-{i}.pkl'
-            with open(fpath,'rb') as openfile:
+            with open(fpath_smc_report,'rb') as openfile:
                 data = pickle.load(openfile)
             loglik_smc = data['log_marginal_likelihood']
             title += f'\n SMC loglik: {log_mean_exp(loglik_smc)}'
