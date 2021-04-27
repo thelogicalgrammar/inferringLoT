@@ -175,7 +175,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
             mean_elbo = -np.mean(fit.hist[50000:]) * minibatch_adjustment
             title += f'\n ELBO: {mean_elbo}'
         
-        if freq_reg is not None:
+        if path_freq_reg is not None:
             color_freq_reg = 'blue'
             plot_reg_line(
                 length_i, 
