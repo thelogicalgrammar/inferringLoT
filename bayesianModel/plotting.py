@@ -202,7 +202,7 @@ if __name__=='__main__':
     plot_all_in_folder(
         path_L='../../data/lengths_data.npy', 
         path_learningdata='../../data/learning_costs.pkl',
-        folder_smc='../../files_from_runs_SMC', 
-        folder_vi='../../files_from_runs_VI', 
+        folder_smc='../files_from_runs_SMC', 
+        folder_vi='../files_from_runs_VI', 
         path_freq_reg='../freq_reg.pkl'
     )
