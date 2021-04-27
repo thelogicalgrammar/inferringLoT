@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 import arviz as az
+import pandas as pd
 from glob import glob
 from pprint import pprint
 from utilities import (
