@@ -14,6 +14,19 @@ from os import path
 
 
 def LoT_indices_to_operators(indices, use_whole_effective_LoT_indices=False, return_nested_list=False):
+    """
+    Parameters
+    ----------
+    indices: list of ints
+        Indices of LoTs
+    use_whole_effective_LoT_indices: bool
+        Whether the passed indices correspond to the actual languages
+        or if they are effective indices 
+        (e.g. 0 isnt an LoT in normal encoding, but it is in effective indices encoding)
+    return_nested_list: bool
+        Whether to return a boolean df with the operators as columns
+        or a nested list with the operator names for each LoT
+    """
     if use_whole_effective_LoT_indices: 
         assert len(indices) == 838, 'Indices does not have the right length!'
         indices = indices[:len(indices)//2]
@@ -198,24 +211,6 @@ def log_sum_exp(x, axis=None):
 def log_normalize(x, axis=None):
     x = np.array(x)
     return x - log_sum_exp(x, axis)
-
-
-def calculate_p_LoT(traces=None, logliks=None, barplot=False):
-    """
-    Parameters
-    ----------
-    traces: list
-        List of traces from SMC pymc3
-    logliks: list or array
-        Shape (# LoTs, # loglik estimates)
-    """
-    assert (traces is not None) or (logliks is not None), 'Specify either traces or logliks!'
-    if logliks is None:
-        logliks = [a.report.log_marginal_likelihood for a in traces]
-    marg_liks = np.exp(log_normalize(log_mean_exp(logliks, axis=1).flatten()))
-    if barplot:
-        plt.bar(np.arange(len(marg_liks)),marg_liks)
-    return marg_liks
 
 
 if __name__=='__main__':

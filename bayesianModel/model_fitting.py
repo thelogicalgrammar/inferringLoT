@@ -107,8 +107,10 @@ def fit_variational(model, filename):
         # advi = pm.FullRankADVI()
         advi = pm.ADVI()
         tracker = pm.callbacks.Tracker(
-            mean=advi.approx.mean.eval,  # callable that returns mean
-            std=advi.approx.std.eval,  # callable that returns std
+            # callable that returns mean
+            mean=advi.approx.mean.eval,
+            # callable that returns std
+            std=advi.approx.std.eval,  
         )
         fit = advi.fit(
             n=500000,
@@ -242,8 +244,15 @@ if __name__=='__main__':
             trace = sample_NUTS(model, filename)
 
         elif args.sampler=='VI':
-            length_i_mb = pm.Minibatch(length_i, batch_size=2000)
-            cost_i_mb = pm.Minibatch(cost_i, batch_size=2000)
+            # NOTE: this uses minibatches!
+            length_i_mb = pm.Minibatch(
+                length_i, 
+                batch_size=2000
+            )
+            cost_i_mb = pm.Minibatch(
+                cost_i, 
+                batch_size=2000
+            )
             model = define_model_singleLoT(
                 length_i_mb,
                 cost_i_mb,
