@@ -191,6 +191,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
         if legend_patches:
             plt.legend(handles=legend_patches)
         ax.set_title(title)
+        plt.tight_layout()
         fig.savefig(f'./realLoTIndex-{real_index}.png')
         
 
