@@ -129,7 +129,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
         
         real_index = effective_LoT_indices[i]
         ops = ops_list[i]        
-        length_i = L_extended[real_index][category_i]
+        length_i = L_extended[real_index][category_i.astype(int)]
         plot_data(length_i, cost_i, ax=ax, style='violin')
         title = str(ops)
         
