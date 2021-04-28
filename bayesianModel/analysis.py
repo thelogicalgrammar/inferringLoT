@@ -76,12 +76,39 @@ def run_frequentist_regression(save=False):
 def get_SMC_logliks(fglob=None):
     if fglob is None:
         fglob = r'C:\Users\faust\Desktop\neuralNetsLoT\logliks\*.pkl'
-    logliks = []
+    logliks = dict()
     for fpath in glob(fglob):
+        params = get_params_from_fpath(fpath)
         with open(fpath,'rb') as openfile:
             data = pickle.load(openfile)
-        logliks.append(data['log_marginal_likelihood'])
+        LoT = int(params['LoT'])
+        logliks[LoT] = data['log_marginal_likelihood']
     return logliks
+
+
+def get_ELBOs(path_vi_glob, n_obs=819200, save=False):
+    elbos = dict()
+    for path in glob(path_vi_glob):
+        print(f'Doing path {path}')
+        # TODO: get actual params
+        params = get_params_from_fpath(fpath)
+        with open(path, 'rb') as openf:
+            fit = pickle.load(openf)['fit']
+        elbos[params['LoT']] = calculate_mean_elbo(fit,n_obs)
+    if save:
+        with open('./elbos.pkl', 'wb') as openf:
+            pickle.dump(elbos, openf)
+    return elbos
+    
+    
+def calculate_mean_elbo(fit, n_obs):
+    # Calculate the average ELBO
+    # across minibatches
+    # and multiply by the number of minibatches
+    # minibatch_adjustment should be 409.6
+    minibatch_adjustment = len(n_obs)/2000
+    mean_elbo = -np.mean(fit.hist[50000:]) * minibatch_adjustment
+    return mean_elbo
 
 
 def calculate_p_LoT(traces=None, logliks=None, barplot=False):
@@ -108,5 +135,12 @@ def calculate_p_LoT(traces=None, logliks=None, barplot=False):
 if __name__=='__main__':
     # fglob = 
     # comparison_df = run_model_comparison(fglob)
-    fname = './serverJobs/sampler-NUTS_LoT-0.pkl'
-    run_single_loo(fname)
+    
+#     fname = './serverJobs/sampler-NUTS_LoT-0.pkl'
+#     run_single_loo(fname)
+
+    # get ELBOs (path is from the pow of the server)
+    get_ELBOs(
+        '../files_from_runs_VI/*.xz',
+        save=True
+    )

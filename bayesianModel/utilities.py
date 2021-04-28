@@ -136,6 +136,7 @@ def get_data(path_L='../data/lengths_data.npy', path_learningdata='../data/learn
 
 def get_params_from_fpath(fpath):
     fname = path.splitext(path.basename(fpath))[0] 
+    fname = fname.lstrip('report_')
     params = dict(s.split('-') for s in fname.split('_'))
     return params
 

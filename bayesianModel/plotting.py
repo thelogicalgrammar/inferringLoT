@@ -14,6 +14,7 @@ from utilities import (
     LoT_indices_to_operators,
     log_mean_exp
 )
+from analysis import calculate_mean_elbo
 from os import path
 import lzma
 
@@ -149,7 +150,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
             with open(fpath_smc_report,'rb') as openfile:
                 data = pickle.load(openfile)
             loglik_smc = data['log_marginal_likelihood']
-            title += f'\n SMC loglik: {log_mean_exp(loglik_smc)}'
+            title += f'\n SMC loglik: {log_mean_exp(loglik_smc)[0]}'
             legend_patches.append(mpatches.Patch(color=color_smc, label='SMC'))
                 
         if folder_vi is not None:
@@ -167,12 +168,7 @@ def plot_all_in_folder(path_L, path_learningdata, folder_smc=None, folder_vi=Non
             )
             legend_patches.append(mpatches.Patch(color=color_vi, label='VI'))
             
-            # Calculate the average ELBO
-            # across minibatches
-            # and multiply by the number of minibatches
-            # minibatch_adjustment should be 409.6
-            minibatch_adjustment = len(cost_i)/2000
-            mean_elbo = -np.mean(fit.hist[50000:]) * minibatch_adjustment
+            mean_elbo = calculate_mean_elbo(fit, len(length_i))
             title += f'\n ELBO: {mean_elbo}'
         
         if path_freq_reg is not None:
