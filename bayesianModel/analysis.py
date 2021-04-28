@@ -88,11 +88,11 @@ def get_SMC_logliks(fglob=None):
 
 def get_ELBOs(path_vi_glob, n_obs=819200, save=False):
     elbos = dict()
-    for path in glob(path_vi_glob):
-        print(f'Doing path {path}')
+    for fpath in glob(path_vi_glob):
+        print(f'Doing path {fpath}')
         # TODO: get actual params
         params = get_params_from_fpath(fpath)
-        with open(path, 'rb') as openf:
+        with open(fpath, 'rb') as openf:
             fit = pickle.load(openf)['fit']
         elbos[params['LoT']] = calculate_mean_elbo(fit,n_obs)
     if save:
