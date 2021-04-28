@@ -14,6 +14,7 @@ from utilities import (
     log_sum_exp
 )
 from os import path
+import lzma
 
 
 def run_model_comparison(fglob):
@@ -92,7 +93,7 @@ def get_ELBOs(path_vi_glob, n_obs=819200, save=False):
         print(f'Doing path {fpath}')
         # TODO: get actual params
         params = get_params_from_fpath(fpath)
-        with open(fpath, 'rb') as openf:
+        with lzma.open(fpath, 'rb') as openf:
             fit = pickle.load(openf)['fit']
         elbos[params['LoT']] = calculate_mean_elbo(fit,n_obs)
     if save:
