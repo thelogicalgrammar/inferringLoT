@@ -107,7 +107,7 @@ def calculate_mean_elbo(fit, n_obs):
     # across minibatches
     # and multiply by the number of minibatches
     # minibatch_adjustment should be 409.6
-    minibatch_adjustment = len(n_obs)/2000
+    minibatch_adjustment = n_obs/2000
     mean_elbo = -np.mean(fit.hist[50000:]) * minibatch_adjustment
     return mean_elbo
 
