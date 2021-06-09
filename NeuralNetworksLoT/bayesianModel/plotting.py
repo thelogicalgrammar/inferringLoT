@@ -7,7 +7,9 @@ import arviz as az
 import pandas as pd
 from glob import glob
 from pprint import pprint
-from utilities import (
+import sys
+sys.path.append("../../")
+from global_utilities import (
     get_data, 
     get_extended_L_and_effective, 
     get_params_from_fpath, 

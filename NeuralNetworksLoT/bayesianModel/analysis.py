@@ -5,7 +5,9 @@ import seaborn as sns
 import arviz as az
 from glob import glob
 from pprint import pprint
-from utilities import (
+import sys
+sys.path.append("../../")
+from global_utilities import (
     get_data, 
     get_extended_L_and_effective, 
     get_params_from_fpath,
@@ -58,9 +60,7 @@ def run_frequentist_regression(save=False):
         model = LinearRegression()
         reg = model.fit(X=length_i,y=cost_i)
         regs.append(reg)
-
         y_hat = model.predict(length_i)
-        y_hats.append(y_hat)
         resid = cost_i - y_hat
         sse = sum(resid**2)
         k = 2

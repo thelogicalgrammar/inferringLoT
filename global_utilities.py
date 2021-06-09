@@ -13,7 +13,7 @@ import sqlite3 as sql
 from os import path
 
 
-def LoT_indices_to_operators(indices, use_whole_effective_LoT_indices=False, return_nested_list=False):
+def LoT_indices_to_operators(indices=None, use_whole_effective_LoT_indices=False, return_nested_list=False):
     """
     Parameters
     ----------
@@ -27,15 +27,22 @@ def LoT_indices_to_operators(indices, use_whole_effective_LoT_indices=False, ret
         Whether to return a boolean df with the operators as columns
         or a nested list with the operator names for each LoT
     """
+    if indices is None:
+        if use_whole_effective_LoT_indices:
+            L, category_i, cost_i = get_data()
+            _, indices = get_extended_L_and_effective(L)
+        else:
+            indices = np.arange(2**9)
     if use_whole_effective_LoT_indices: 
         assert len(indices) == 838, 'Indices does not have the right length!'
         indices = indices[:len(indices)//2]
     else:
-        assert len(indices) <= np.log2(9), (
-            'Too many indices. Are you using the whole effective_LoT_indices'
-            'produced by get_extended_L_and_effective(L) below?'
-            'That no good cause the second half of effective_LoT_indices refers'
-            'to the alternative interpretation of 0/1 as true/false.'
+        # there can be at most n**9 indices 
+        assert len(indices) <= 2**9, (
+            'Too many indices. Are you using the whole effective_LoT_indices '
+            'produced by get_extended_L_and_effective(L) below? '
+            'That does not work because the second half of effective_LoT_indices refers '
+            'to the alternative interpretation of 0/1 as true/false. '
             'Only use first half!'
         )
     lists = np.array([list(f'{x:09b}') for x in indices])
@@ -60,6 +67,10 @@ def LoT_indices_to_operators(indices, use_whole_effective_LoT_indices=False, ret
 
 
 def get_saved_categories(cur):
+    """
+    Get the categories and how many times they appear,
+    as stored in an sqlite3 database
+    """
     instruction = (
         'SELECT category, count(category) '
         'FROM data '
@@ -93,6 +104,10 @@ def check_status_individual_cat():
 
 
 def get_learning_info(print_n_rows=False, db_path=None):
+    """
+    Get information about the table encoding the learning times
+    """
+    
     if db_path is None:
         db_path='/Users/faust/Desktop/neuralNetsLoT/reps-25_batch_size-8_num_epochs-400.db'
     

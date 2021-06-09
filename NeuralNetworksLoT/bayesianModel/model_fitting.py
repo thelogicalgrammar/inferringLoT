@@ -9,7 +9,9 @@ import arviz as az
 import theano 
 import theano.tensor as T
 import lzma
-from utilities import get_data, get_extended_L_and_effective
+import sys
+sys.path.append("../../")
+from global_utilities import get_data, get_extended_L_and_effective
 from pymc3.variational.callbacks import CheckParametersConvergence
 
 

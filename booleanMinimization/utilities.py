@@ -98,6 +98,8 @@ def define_properties(num):
     ------
     list of ints
         Each int is one propositional variable
+        (The binary version of these ints are the truth-table-style columns
+        for the properties)
     """
     a = list(map(list,zip(
         *[f'{i:0{num}b}' for i in range(2**NUM_PROPERTIES)]
