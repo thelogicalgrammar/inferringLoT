@@ -1,2 +1,3 @@
-# NeuralNetworksLoT
- An comparison between neural networks' learning and a Boolean Language of Thought
+# Inferring LoT
+
+A project to reconstruct an agent's Boolean Language of Thought from learning data
