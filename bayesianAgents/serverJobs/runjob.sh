@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J "datasize_${1}_nparts_${2}_temp_${3}"
+#SBATCH -J "datasize_{$1}_nparts_{$2}_temp_{$3}"
 #SBATCH -n 1
 #SBATCH -p shared
 #SBATCH -t 25:00:00
