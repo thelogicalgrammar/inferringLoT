@@ -30,7 +30,6 @@ if __name__=='__main__':
     )
     parser.add_argument(
         '--n_experiments', 
-        required=True,
         default=10,
         type=int, 
         help='Number of experiments'
