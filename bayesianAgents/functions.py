@@ -2,6 +2,7 @@ import numpy as np
 
 import sys
 sys.path.append("../")
+sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
 
 
