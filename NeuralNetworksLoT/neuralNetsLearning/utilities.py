@@ -85,5 +85,3 @@ def change_status_in_db(cur,con,category_int,newstatus):
 
 def binary_to_bitlist(n,total):
     return [int(a) for a in f'{n:0{total}b}']
-
-
