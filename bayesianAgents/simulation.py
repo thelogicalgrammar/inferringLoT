@@ -49,7 +49,7 @@ if __name__=='__main__':
     n_experiments = args.n_experiments
 
     # get minimal formulas length
-    with open(args.lengths_data_path, 'rb') as openfile:
+    with open(args.length_data_path, 'rb') as openfile:
         lengths_full = np.load(openfile)
         
     NUM_PROPERTIES = 4
