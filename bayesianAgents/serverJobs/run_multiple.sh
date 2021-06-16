@@ -5,6 +5,7 @@ do
         for temp in 0.5 1 3 6
         do
             echo "$datasize|$n_participants|$temp"
+            sbatch ./runjob.sh $datasize $n_participants $temp
         done
     done
 done

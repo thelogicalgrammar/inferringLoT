@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -J "datasize_$1_nparts_$2_temp_$3"
 #SBATCH -n 1
 #SBATCH -p shared
 #SBATCH -t 25:00:00
