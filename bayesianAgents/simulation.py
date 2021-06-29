@@ -5,6 +5,7 @@ sys.path.append("../")
 sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
 from functions import *
+from pprint import pprint
 
 
 if __name__=='__main__':
@@ -47,6 +48,8 @@ if __name__=='__main__':
     n_participants = args.n_participants
     temp = args.temp
     n_experiments = args.n_experiments
+    
+    pprint(vars(args))
 
     # get minimal formulas length
     with open(args.length_data_path, 'rb') as openfile:
