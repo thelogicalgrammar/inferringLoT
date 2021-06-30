@@ -11,7 +11,7 @@ from global_utilities import LoT_indices_to_operators
 #     alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
 #     return np.log(np.sum(np.exp(X-alpha), axis=axis, keepdims=keepdims)) + alpha
 
-def logsumexp_ne(X, axis):
+def logsumexp(X, axis):
     alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
     a = ne.evaluate('exp(X-alpha)')
     a = np.sum(a, axis=axis, keepdims=True)
@@ -21,7 +21,7 @@ def logsumexp_ne(X, axis):
 
 def log_softmax(array, axis, temp):
     log_unnorm = (temp*-array).astype(np.float64)
-    log_norm = log_unnorm - logsumexp(log_unnorm, axis=axis, keepdims=True)
+    log_norm = log_unnorm - logsumexp(log_unnorm, axis=axis)
     return log_norm
 
 
@@ -48,7 +48,7 @@ def calculate_logp_accept_object_marginal(lengths, categories, data, temp=3):
     
     logp_category_given_data = (
         logp_category_given_data - 
-        logsumexp(logp_category_given_data, axis=1, keepdims=True)
+        logsumexp(logp_category_given_data, axis=1)
     )
     
     # Array has shape (LoTs, categories compatible with data, objects)
@@ -59,7 +59,7 @@ def calculate_logp_accept_object_marginal(lengths, categories, data, temp=3):
     # sum across categories
     # which gives the marginal probability of each object
     # given each LoT
-    logp_accept_object_marginal = logsumexp(array, axis=1, keepdims=True)
+    logp_accept_object_marginal = logsumexp(array, axis=1)
 
     return logp_accept_object_marginal.squeeze()
 
@@ -216,7 +216,7 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
     
     # find probability of each LoT given the agent's behaviour
     # i.e. which stimuli were accepted and rejected
-    logp_LoT_given_behaviour -= np.logaddexp.reduce(logp_LoT_given_behaviour, keepdims=True)
+    logp_LoT_given_behaviour -= logsumexp(logp_LoT_given_behaviour, axis=0)
 
 #     # Re-expand the array to also include the LoTs that are not functionally complete
 #     # NOTE: This doesn't work anymore
