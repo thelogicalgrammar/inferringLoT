@@ -1,4 +1,5 @@
 import numpy as np
+import numexpr as ne
 
 import sys
 sys.path.append("../")
@@ -6,17 +7,36 @@ sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
 
 
+# def logsumexp(X, axis, keepdims=True):
+#     alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
+#     return np.log(np.sum(np.exp(X-alpha), axis=axis, keepdims=keepdims)) + alpha
+
+def logsumexp_ne(X, axis):
+    alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
+    a = ne.evaluate('exp(X-alpha)')
+    a = np.sum(a, axis=axis, keepdims=True)
+    a = ne.evaluate('log(a)+alpha')
+    return a 
+
+
 def log_softmax(array, axis, temp):
     log_unnorm = (temp*-array).astype(np.float64)
-    log_norm = log_unnorm - np.logaddexp.reduce(log_unnorm, axis=axis, keepdims=True)
+    log_norm = log_unnorm - logsumexp(log_unnorm, axis=axis, keepdims=True)
     return log_norm
 
 
-def calculate_logp_category_given_data(lengths, categories, data, temp=3):
+def calculate_logp_accept_object_marginal(lengths, categories, data, temp=3):
+    """
+    Get marginal probability that the participant will accept each object
+    as belonging to the unobserved category given each possible LoT.
+    For each LoT, sum across categories:
+    (p_category * indicator function of object for that category)
+    """
     
     # the prior probability of each category 
     # assuming a softmax simplicity prior
     logp_category_given_LoT = log_softmax(lengths.astype(np.int64), axis=1, temp=temp)
+    
     if data.sum()==0:
         logp_data_given_category = np.zeros(len(categories))
     else:
@@ -28,20 +48,19 @@ def calculate_logp_category_given_data(lengths, categories, data, temp=3):
     
     logp_category_given_data = (
         logp_category_given_data - 
-        np.logaddexp.reduce(logp_category_given_data, axis=1, keepdims=True)
+        logsumexp(logp_category_given_data, axis=1, keepdims=True)
     )
     
-    return logp_category_given_data
-
-
-def calculate_logp_accept_object_marginal(categories, logp_category_given_data):
-    # get marginal probability that the participant will accept each object
-    # as belonging to the unobserved category
-    # given each possible LoT.
-    # For each LoT, sum across categories 
-    # (p_category * indicator function of object for that category)
+    # Array has shape (LoTs, categories compatible with data, objects)
+    # For each LoT, category and object, array contains the probability of the
+    # category to which the object belongs
+    # array is -inf when the object is not in the category
     array = np.log(categories[None]) + logp_category_given_data[:,:,None]
-    logp_accept_object_marginal = np.logaddexp.reduce(array, axis=1, keepdims=True)
+    # sum across categories
+    # which gives the marginal probability of each object
+    # given each LoT
+    logp_accept_object_marginal = logsumexp(array, axis=1, keepdims=True)
+
     return logp_accept_object_marginal.squeeze()
 
     
@@ -172,18 +191,13 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
             np.logical_not(data & np.logical_not(categories)), 
             axis=1
         )
-
+        
         # only consider categories compatible with data
-        logp_category_given_data = calculate_logp_category_given_data(
+        logp_accept_object_marginal = calculate_logp_accept_object_marginal(
             lengths[:,compatible_with_data], 
             categories[compatible_with_data], 
             data, 
             temp=temp
-        )
-
-        logp_accept_object_marginal = calculate_logp_accept_object_marginal(
-            categories[compatible_with_data], 
-            logp_category_given_data
         )
 
         agent_behaviour = simulate_agent_choice(

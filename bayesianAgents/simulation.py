@@ -54,6 +54,7 @@ if __name__=='__main__':
     # get minimal formulas length
     with open(args.length_data_path, 'rb') as openfile:
         lengths_full = np.load(openfile)
+    print('Got lengths full')
         
     NUM_PROPERTIES = 4
     LoTs_full = LoT_indices_to_operators().values
@@ -64,7 +65,8 @@ if __name__=='__main__':
     ])
     
     lengths, LoTs = prepare_arrays(lengths_full, LoTs_full)
-
+    print('Prepared the lengths and LoTs arrays')
+    
     # Store for every LoT, for each experiment within that LoT,
     # the posterior over LoTs given the data in that experiment
     results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
@@ -81,7 +83,7 @@ if __name__=='__main__':
                 true_LoT=true_LoT[None], 
             )
             results[j,i] = logp_LoT_given_behaviour
-        print(j)
+        print("Done with LoT: ", j)
     
     filename = (
         f'datasize-{datasize}_'
