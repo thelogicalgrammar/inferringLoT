@@ -22,6 +22,8 @@ def calculate_all_inventories(ops, props):
     ops, props: list of strings
     """
 
+    # NOTE: IC and NIC are disregarded because they are going to produce the same 
+    # minimal formulas as the corresponding languages with C and NC respectively
     f_complete = [
         # one element
         {'NOR',},

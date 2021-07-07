@@ -37,10 +37,14 @@ if __name__=='__main__':
     )
 
     parser.add_argument(
-        '--length_data_path', 
-        default='../../data/lengths_data.npy',
+        '--complete_lengths_path', 
+        default='../../data/complete_lengths.npy',
         type=str, 
-        help='Path of file containing minimal formula lengths'
+        help=(
+            'Path of file containing minimal formula lengths '
+            'for ALL functionally complete categories.'
+            '(NOTE: including all dual LoTs)'
+        )
     )
 
     args = parser.parse_args()
@@ -52,22 +56,28 @@ if __name__=='__main__':
     pprint(vars(args))
 
     # get minimal formulas length
-    with open(args.length_data_path, 'rb') as openfile:
+    with open(args.complete_lengths_path, 'rb') as openfile:
         lengths_full = np.load(openfile)
     print('Got lengths full')
         
     NUM_PROPERTIES = 4
-    LoTs_full = LoT_indices_to_operators().values
-
+    LoTs_full = LoT_indices_to_operators()
+    argsort_by_N = LoTs_full['N'].argsort()
+    
+    # lengths_full has the lengths for ALL functionally complete LoTs.
+    # re-order so that all first part of the array is when N is False
+    # which means that in the reduced array all the cases where 
+    # there are two LoTs, one with and one without N,
+    # the one without N is the one that appears in the reduced version
+    lengths, LoTs = prepare_arrays(lengths_full[argsort_by_N], LoTs_full.iloc[argsort_by_N].values)
+    print('Prepared the lengths and LoTs arrays')
+    
     categories = np.array([
         [int(a) for a in f'{n:0{2**NUM_PROPERTIES}b}']
         for n in range(0, 2**(2**NUM_PROPERTIES))
     ])
     
-    lengths, LoTs = prepare_arrays(lengths_full, LoTs_full)
-    print('Prepared the lengths and LoTs arrays')
-    
-    # Store for every LoT, for each experiment within that LoT,
+    # Store for every true LoT, for each experiment within that LoT,
     # the posterior over LoTs given the data in that experiment
     results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
     for j, true_LoT in enumerate(LoTs):

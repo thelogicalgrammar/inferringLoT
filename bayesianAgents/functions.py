@@ -7,9 +7,63 @@ sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
 
 
+def expand_with_equivalent_LoTs(LoTs):
+    OP_EQUIV_DICT = {
+        'O': 'A',
+        'A': 'O',
+        'N': 'N',
+        # the dual of C is NIC in theory
+        # but NIC is equivalent to NC
+        # so I am just using NC instead of NIC everywhere
+        # to have fewer operators
+        'C': 'NC',
+    #     'IC': 'NC',
+        'B': 'X',
+        'X': 'B',
+        'NA': 'NOR',
+        'NOR': 'NA',
+        # the dual of 'NC' in theory is 'IC'
+        # but IC is equivalent to C
+        # so I am just using C instead of IC everywhere
+        # to have fewer operators
+        'NC': 'C',
+    #     'NIC': 'C'
+    }
+    new_cols = [OP_EQUIV_DICT[i] for i in LoTs.columns]
+    # only return unique rows
+    return (
+        pd.DataFrame(LoTs.values, columns=new_cols)
+        .drop_duplicates()
+        .reindex(LoTs.columns, axis=1)
+    )
+
+
+def calculate_complete_lengths(lengths, LoTs):
+    """
+    To each element of array "lengths" with -1, add the 
+    lengths from the corresponding dual LoT.
+    The only arrays left with -1 are the ones
+    corresponding to functionally incomplete LoTs
+    """
+    
+    index_to_dual = number_to_dual_number(np.arange(65536))
+    
+    # for each LoTs, save the index of the dual LoT
+    index_dual_LoT = []
+    for row_index in np.arange(len(lengths)):
+        equiv_LoT = expand_with_equivalent_LoTs(LoTs.iloc[row_index:row_index+1])
+        index_equivalent = np.argwhere(np.all(LoTs.values==equiv_LoT.values, axis=1))[0][0]
+        index_dual_LoT.append(index_equivalent)
+    
+    index_incomplete = lengths[:,0]==-1
+    lengths[index_incomplete] = lengths[index_dual_LoT][:, index_to_dual][index_incomplete]
+    return lengths
+
+
 # def logsumexp(X, axis, keepdims=True):
 #     alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
 #     return np.log(np.sum(np.exp(X-alpha), axis=axis, keepdims=keepdims)) + alpha
+
 
 def logsumexp(X, axis):
     alpha = np.max(X, axis=axis, keepdims=True)  # Find maximum value in X
@@ -102,7 +156,7 @@ def calculate_logp_behaviour_given_LoT(logp_accept_object_marginal, agent_behavi
     return logp_behaviour_given_LoT
 
 
-def prepare_arrays(lengths_full, LoTs_full):
+def prepare_arrays(lengths_full, LoTs_full, return_indices_ar=False, return_inverse_indices=False):
     """
     Eliminate the functionally incomplete arrays as well as the repetitions
     """
@@ -127,7 +181,13 @@ def prepare_arrays(lengths_full, LoTs_full):
     # get the array with the true LoTs
     LoTs = LoTs_full[indices_ar,:]
     
-    return lengths, LoTs
+    returnvalues = lengths, LoTs
+    if return_indices_ar:
+        returnvalues+=(indices_ar,)
+    if return_inverse_indices:
+        returnvalues+=(inverse_indices,)
+    
+    return returnvalues
 
 
 def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_participants,
