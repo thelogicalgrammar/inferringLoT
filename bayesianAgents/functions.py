@@ -1,5 +1,6 @@
 import numpy as np
 import numexpr as ne
+import pandas as pd
 
 import sys
 sys.path.append("../")
@@ -35,6 +36,26 @@ def expand_with_equivalent_LoTs(LoTs):
         pd.DataFrame(LoTs.values, columns=new_cols)
         .drop_duplicates()
         .reindex(LoTs.columns, axis=1)
+    )
+
+
+def number_to_category(number):
+    return [int(n) for n in f'{number:0{16}b}']
+
+
+def dual_category(categories_array):
+    return 1-categories_array[:,::-1]
+
+
+def category_to_number(categories_array):
+    return categories_array.dot(1 << np.arange(categories_array.shape[-1] - 1, -1, -1))
+
+
+def number_to_dual_number(numbers_list):
+    return category_to_number(
+        dual_category(
+            np.array(list(map(number_to_category, numbers_list)))
+        )
     )
 
 
@@ -179,7 +200,7 @@ def prepare_arrays(lengths_full, LoTs_full, return_indices_ar=False, return_inve
     )
     
     # get the array with the true LoTs
-    LoTs = LoTs_full[indices_ar,:]
+    LoTs = functionally_complete_LoTs[indices_ar,:]
     
     returnvalues = lengths, LoTs
     if return_indices_ar:

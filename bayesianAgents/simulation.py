@@ -59,6 +59,7 @@ if __name__=='__main__':
     # get minimal formulas length
     with open(args.complete_lengths_path, 'rb') as openfile:
         lengths_full = np.load(openfile)
+    
     print('Got lengths full')
         
     NUM_PROPERTIES = 4
