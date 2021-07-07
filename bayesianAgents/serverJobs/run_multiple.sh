@@ -1,10 +1,9 @@
-# Already calculated for 10 and 15
-for datasize in 0 1 5
+# for now don't run 0 and 1. They probably take more than 100 hours atm
+for datasize in 5 10 15
 do
-    # Already calculated for 1
-    for n_participants in 5 10 30 60 120 250 500 1000
+    for n_participants in 1 10 30 60 120 250 500
     do
-        for temp in 0.5 1 3 6
+        for temp in 0.5 1 3
         do
             echo "$datasize|$n_participants|$temp"
             sbatch ./runjob.sh $datasize $n_participants $temp

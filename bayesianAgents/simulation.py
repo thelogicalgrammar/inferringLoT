@@ -6,6 +6,7 @@ sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
 from functions import *
 from pprint import pprint
+import time
 
 
 if __name__=='__main__':
@@ -81,6 +82,7 @@ if __name__=='__main__':
     # the posterior over LoTs given the data in that experiment
     results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
     for j, true_LoT in enumerate(LoTs):
+        start = time.time()
         for i in range(n_experiments):
             # logp_LoT_given_behaviour has shape (LoT)
             _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour(
@@ -94,6 +96,7 @@ if __name__=='__main__':
             )
             results[j,i] = logp_LoT_given_behaviour
         print("Done with LoT: ", j)
+        print("It took seconds: ", time.time()-start)
     
     filename = (
         f'datasize-{datasize}_'
