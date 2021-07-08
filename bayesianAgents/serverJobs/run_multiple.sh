@@ -1,5 +1,5 @@
-# for now don't run 0 and 1. They probably take more than 100 hours atm
-for datasize in 5 10 15
+# Already ran 5 10 15.
+for datasize in 0 1
 do
     for n_participants in 1 10 30 60 120 250 500
     do

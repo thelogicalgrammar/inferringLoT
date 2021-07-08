@@ -78,12 +78,12 @@ if __name__=='__main__':
         [int(a) for a in f'{n:0{2**NUM_PROPERTIES}b}']
         for n in range(0, 2**(2**NUM_PROPERTIES))
     ])
-    
+    start_time = time.time()
     # Store for every true LoT, for each experiment within that LoT,
     # the posterior over LoTs given the data in that experiment
     results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
     for j, true_LoT in enumerate(LoTs):
-        start = time.time()
+        iteration_start_time = time.time()
         for i in range(n_experiments):
             # logp_LoT_given_behaviour has shape (LoT)
             _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour(
@@ -97,7 +97,8 @@ if __name__=='__main__':
             )
             results[j,i] = logp_LoT_given_behaviour
         print("Done with LoT: ", j)
-        print("It took seconds: ", time.time()-start)
+        print("For this iteration, seconds: ", time.time()-iteration_start_time)
+        print("For all simulation, seconds: ", time.time()-start_time, '\n')
     
     filename = (
         f'datasize-{datasize}_'
