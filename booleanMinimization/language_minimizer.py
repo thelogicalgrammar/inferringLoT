@@ -99,6 +99,7 @@ class Inventory():
                     if op_name in OPS_SYMMETRIC:
                         # loop through all combinations of numbers
                         # the lengths of whose operators sum to level-1
+                        # (plus repetition)
                         # (e.g. if I have (3,4), don't have (4,3) )
                         for (a,b) in zip(range(n//2+1), range(n-1,n//2-1,-1)):
                             for args in product(layers[a], layers[b]):
@@ -108,6 +109,7 @@ class Inventory():
                     else:
                         # loop through all permutations of two numbers
                         # the lengths of whose operators sum to level-1
+                        # (plus repetition)
                         for (a,b) in zip(range(n), range(n-1,-1,-1)):
                             for args in product(layers[a], layers[b]):
                                 newform = formula_constructor(op_name,args)

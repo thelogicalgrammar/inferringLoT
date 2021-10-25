@@ -1,1 +1,0 @@
-This folder contains the code that trains the neural networks on each category and stores the learning times

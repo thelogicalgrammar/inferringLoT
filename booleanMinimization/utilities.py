@@ -66,7 +66,7 @@ def calculate_all_inventories(ops, props):
         for inv in powerset_ops
         if any([set(inv).issuperset(f_comp_inv) for f_comp_inv in f_complete])
     ]
-    # print(all_inventories_formulas)
+    print(len(all_inventories_formulas))
 
     # operators which are equivalent in the sense of flipping
     # the interpretations of 0 and 1 in the propositions
