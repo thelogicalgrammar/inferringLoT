@@ -222,7 +222,7 @@ def prepare_arrays(lengths_full, LoTs_full, return_indices_ar=False, return_inve
 
 
 def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_participants,
-                                       temp=3, true_LoT=None, data=None):
+                                       temp=3, index_true_LoT=None, data=None):
     """
     Parameters
     ----------
@@ -243,7 +243,7 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
         The number of participants to get data from
     temp: float
         The strength of simplicity preference
-    true_LoT: int
+    index_true_LoT: int
         The true LoT for the agents
     data: array
         The data to show to the agents
@@ -281,9 +281,9 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
 
         # if no value was given to the true agent's LoT, it is
         # selected at random from the functionally complete LoTs
-        if true_LoT is None:
+        if index_true_LoT is None:
             # index when excluding functionally incomplete
-            true_LoT = LoTs[np.random.choice(len(LoTs))]
+            index_true_LoT = np.random.choice(len(LoTs))
 
         # boolean mask of categories compatible with the observed data
         compatible_with_data = np.all(
@@ -311,7 +311,7 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
             # marginal probability to accept each object
             np.exp(logp_accept_object_marginal), 
             # index of the participant's true LoT
-            np.argwhere(np.all(LoTs==true_LoT, axis=1))[0][0]
+            index_true_LoT
         )
 
         logp_behaviour_given_LoT = calculate_logp_behaviour_given_LoT(
@@ -332,11 +332,11 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
 #     logp_LoT_given_behaviour_full = np.full(len(lengths_full), fill_value=-np.inf)
 #     logp_LoT_given_behaviour_full[functionally_complete_LoTs_indices] = logp_LoT_given_behaviour
 
-    return true_LoT, logp_LoT_given_behaviour
+    return LoTs[index_true_LoT], logp_LoT_given_behaviour
 
 
 def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories, 
-                                               n_participants, temp, true_LoT):
+                                               n_participants, temp, index_true_LoT):
     """
     This is the version of the experiment where for each participant 
     at each trial we calculate the expected information gain of each remaining 
@@ -348,7 +348,7 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
     -------
     tuple
         Tuple (true_LoT, logp_LoT_given_behaviour_total)
-        where true_LoT is the index of the LoT 
+        where true_LoT is the true LoT 
         and logp_LoT_given_behaviour_total is the posterior probability over LoT
         given the participant's behaviour in the dynamic experiment.
     """
@@ -583,7 +583,7 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
             # generate simulated behaviour from the participant
             # by sampling an answer ('yes' or 'no') for that trial
             p_yes = np.exp(
-                logp_yes_given_LoT[true_LoT,asked_object]
+                logp_yes_given_LoT[index_true_LoT,asked_object]
             )
             # print("Probability of yes: ", p_yes)
             
@@ -624,17 +624,17 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
         use_ne=False
     )
     
-    print("\n\nTrue LoT: ", true_LoT)
-    print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[true_LoT]))
+    print("\n\nTrue LoT: ", index_true_LoT)
+    print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[index_true_LoT]))
     argmax = np.argmax(logp_LoT_given_behaviour_total)
     print("P max, LoT max: ", argmax, np.exp(logp_LoT_given_behaviour_total[argmax]), "\n\n") 
 
-    return true_LoT, logp_LoT_given_behaviour_total
+    return LoTs[index_true_LoT], logp_LoT_given_behaviour_total
 
 
 
 def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories, 
-                                               n_participants, temp, true_LoT):
+                                               n_participants, temp, index_true_LoT):
     """
     This is the version of the experiment where participants are given
     feedback trial-by-trial, but the order in which the stimuli are shown 
@@ -644,7 +644,7 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
     -------
     tuple
         Tuple (true_LoT, logp_LoT_given_behaviour_total)
-        where true_LoT is the index of the LoT 
+        where true_LoT is the true LoT 
         and logp_LoT_given_behaviour_total is the posterior probability over LoT
         given the participant's behaviour in the serial experiment.
     """
@@ -791,7 +791,7 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
             # generate simulated behaviour from the participant
             # by sampling an answer ('yes' or 'no') for that trial
             p_yes = np.exp(
-                logp_yes_given_LoT[true_LoT,asked_object]
+                logp_yes_given_LoT[index_true_LoT,asked_object]
             )
             # print("Probability of yes: ", p_yes)
             
@@ -832,12 +832,12 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
         use_ne=False
     )
     
-    print("\n\nTrue LoT: ", true_LoT)
-    print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[true_LoT]))
+    print("\n\nTrue LoT: ", index_true_LoT)
+    print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[index_true_LoT]))
     argmax = np.argmax(logp_LoT_given_behaviour_total)
     print("P max, LoT max: ", argmax, np.exp(logp_LoT_given_behaviour_total[argmax]), "\n\n") 
 
-    return true_LoT, logp_LoT_given_behaviour_total
+    return index_true_LoT, logp_LoT_given_behaviour_total
 
 
 def run_simulation_log(datasize, lengths_full, LoTs_full, categories, n_participants,

@@ -95,6 +95,7 @@ if __name__=='__main__':
         [int(a) for a in f'{n:0{2**NUM_PROPERTIES}b}']
         for n in range(0, 2**(2**NUM_PROPERTIES))
     ])
+    
     start_time = time.time()
     # Store for every true LoT, for each experiment within that LoT,
     # the posterior over LoTs given the data in that experiment
@@ -115,6 +116,7 @@ if __name__=='__main__':
                     categories=categories,
                     n_participants=n_participants,
                     temp=temp, 
+                    # index of the true LoT
                     true_LoT=true_LoT[None], 
                 )
                 
@@ -127,10 +129,9 @@ if __name__=='__main__':
                     categories=categories, 
                     n_participants=n_participants, 
                     temp=temp, 
-                    true_LoT=true_LoT
+                    index_true_LoT=j
                 )
-                
-                
+        
             elif type_experiment == "serial":
                 
                 # logp_LoT_given_behaviour has shape (LoT)
@@ -140,7 +141,7 @@ if __name__=='__main__':
                     categories=categories, 
                     n_participants=n_participants, 
                     temp=temp, 
-                    true_LoT=true_LoT
+                    index_true_LoT=j
                 )
                 
             else:

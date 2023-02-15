@@ -22,7 +22,18 @@ except FileNotFoundError:
         
         
 NUM_PROPERTIES = 4
-LoTs = LoT_indices_to_operators()
+LoTs_full = LoT_indices_to_operators()
+argsort_by_N = LoTs_full['N'].argsort()
+# lengths_full has the lengths for ALL functionally complete LoTs.
+# re-order so that all first part of the array is when N is False
+# which means that in the reduced array all the cases where 
+# there are two LoTs, one with and one without N,
+# the one without N is the one that appears in the reduced version
+lengths, LoTs = functions.prepare_arrays(
+    lengths_full[argsort_by_N], 
+    LoTs_full.iloc[argsort_by_N].values
+)
+print('Prepared the lengths and LoTs arrays')
 
 categories = np.array([
     [int(a) for a in f'{n:0{2**NUM_PROPERTIES}b}']
