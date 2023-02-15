@@ -3,12 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import pymc3 as pm
-import theano 
-import theano.tensor as tt
-import arviz as az
 from pprint import pprint
-from scipy import stats
 import sqlite3 as sql
 from os import path
 

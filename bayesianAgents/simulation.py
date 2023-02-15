@@ -14,7 +14,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument(
         '--datasize', 
-        required=True,
+        # required=True,
         type=int, 
         help='Number of objects shown'
     )
@@ -47,12 +47,25 @@ if __name__=='__main__':
             '(NOTE: including all dual LoTs)'
         )
     )
+    
+    parser.add_argument(
+        '--type_experiment', 
+        default='scattershot',
+        type=str, 
+        help=(
+            'Type of experiment. Implemented: \n'
+            'scattershot: Participants are asked to categorize all unseen datapoints \n'
+            'dynamic: participants categorize and get feedback on each trial;'
+            ' next stim is chosen with greedy Bayesian exp design \n' 
+            'serial: '
+        )
+    )
 
     args = parser.parse_args()
-    datasize = args.datasize
     n_participants = args.n_participants
     temp = args.temp
     n_experiments = args.n_experiments
+    type_experiment = args.type_experiment
     
     pprint(vars(args))
 
@@ -71,7 +84,11 @@ if __name__=='__main__':
     # which means that in the reduced array all the cases where 
     # there are two LoTs, one with and one without N,
     # the one without N is the one that appears in the reduced version
-    lengths, LoTs = prepare_arrays(lengths_full[argsort_by_N], LoTs_full.iloc[argsort_by_N].values)
+    lengths, LoTs = prepare_arrays(
+        lengths_full[argsort_by_N], 
+        LoTs_full.iloc[argsort_by_N].values
+    )
+    print("LoTs shape: ", LoT.shape)
     print('Prepared the lengths and LoTs arrays')
     
     categories = np.array([
@@ -85,17 +102,54 @@ if __name__=='__main__':
     for j, true_LoT in enumerate(LoTs):
         iteration_start_time = time.time()
         for i in range(n_experiments):
-            # logp_LoT_given_behaviour has shape (LoT)
-            _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour(
-                datasize=datasize, 
-                lengths=lengths, 
-                LoTs=LoTs, 
-                categories=categories, 
-                n_participants=n_participants,
-                temp=temp, 
-                true_LoT=true_LoT[None], 
-            )
+            
+            if type_experiment == "scattershot":
+                
+                datasize = args.datasize
+                
+                # logp_LoT_given_behaviour has shape (LoT)
+                _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour(
+                    datasize=datasize, 
+                    lengths=lengths, 
+                    LoTs=LoTs, 
+                    categories=categories,
+                    n_participants=n_participants,
+                    temp=temp, 
+                    true_LoT=true_LoT[None], 
+                )
+                
+            elif type_experiment == "dynamic":
+                
+                # logp_LoT_given_behaviour has shape (LoT)
+                _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour_dynamic(
+                    lengths=lengths, 
+                    LoTs=LoTs, 
+                    categories=categories, 
+                    n_participants=n_participants, 
+                    temp=temp, 
+                    true_LoT=true_LoT
+                )
+                
+                
+            elif type_experiment == "serial":
+                
+                # logp_LoT_given_behaviour has shape (LoT)
+                _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour_serial(
+                    lengths=lengths, 
+                    LoTs=LoTs, 
+                    categories=categories, 
+                    n_participants=n_participants, 
+                    temp=temp, 
+                    true_LoT=true_LoT
+                )
+                
+            else:
+                raise NotImplementedError(
+                    "Specified experiment type not recognized!"
+                )
+            
             results[j,i] = logp_LoT_given_behaviour
+        
         print("Done with LoT: ", j)
         print("For this iteration, seconds: ", time.time()-iteration_start_time)
         print("For all simulation, seconds: ", time.time()-start_time, '\n')
@@ -104,7 +158,8 @@ if __name__=='__main__':
         f'datasize-{datasize}_'
         f'nparticipants-{n_participants}_'
         f'temp-{temp}_'
-        f'nexperiments-{n_experiments}'
+        f'nexperiments-{n_experiments}_'
+        f'type-{type_experiment}'
     )
     with open(f'./data/{filename}.npz', 'wb') as openfile:
         np.savez_compressed(
