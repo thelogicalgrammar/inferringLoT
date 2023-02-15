@@ -88,7 +88,7 @@ if __name__=='__main__':
         lengths_full[argsort_by_N], 
         LoTs_full.iloc[argsort_by_N].values
     )
-    print("LoTs shape: ", LoT.shape)
+    print("LoTs shape: ", LoTs.shape)
     print('Prepared the lengths and LoTs arrays')
     
     categories = np.array([
