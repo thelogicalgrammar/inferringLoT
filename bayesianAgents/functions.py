@@ -669,19 +669,17 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
 #             np.exp(logp_LoT_given_behaviour[argmax])
 #         )
         
-#         print(
-#             "True P tot, true max: ",
-#             index_true_LoT,
-#             np.exp(logp_LoT_given_behaviour_total[index_true_LoT])
-#         )
         
-#         argmax_total = np.argmax(logp_LoT_given_behaviour_total)
-#         print(
-#             "Total P max, LoT max: ", 
-#             argmax_total, 
-#             np.exp(logp_LoT_given_behaviour_total[argmax_total]), 
-#             "\n"
-#         ) 
+        argmax_total = np.argmax(logp_LoT_given_behaviour_total)
+        print(
+            "True P tot, true max: ",
+            index_true_LoT,
+            np.exp(logp_LoT_given_behaviour_total[index_true_LoT]),
+            "\nTotal P max, LoT max: ", 
+            argmax_total, 
+            np.exp(logp_LoT_given_behaviour_total[argmax_total]), 
+            "\n"
+        ) 
          
         if optional_stopping and np.any(np.exp(logp_LoT_given_behaviour_total) > 0.95):
             break
@@ -908,6 +906,17 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
             logposterior_history,
             logp_LoT_given_behaviour_total[None,:]
         ))
+           
+        argmax_total = np.argmax(logp_LoT_given_behaviour_total)
+        print(
+            "True P tot, true max: ",
+            index_true_LoT,
+            np.exp(logp_LoT_given_behaviour_total[index_true_LoT]),
+            "\nTotal P max, LoT max: ", 
+            argmax_total, 
+            np.exp(logp_LoT_given_behaviour_total[argmax_total]), 
+            "\n"
+        ) 
                  
         if optional_stopping and np.any(np.exp(logp_LoT_given_behaviour_total) > 0.95):
             break
