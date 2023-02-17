@@ -1,6 +1,6 @@
-for n_participants in 1 10 30 60 120 250 500
+for n_participants in 300
 do
-    for temp in 0.5 1 3
+    for temp in 0.5 1.0 3.0 5.0
     do
         echo "$n_participants|$temp"
         sbatch ./runjob_serial.sh $n_participants $temp

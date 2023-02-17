@@ -336,7 +336,8 @@ def calculate_logp_LoT_given_behaviour(datasize, lengths, LoTs, categories, n_pa
 
 
 def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories, 
-                                               n_participants, temp, index_true_LoT):
+                                               n_participants, temp, index_true_LoT,
+                                               optional_stopping=True):
     """
     This is the version of the experiment where for each participant 
     at each trial we calculate the expected information gain of each remaining 
@@ -365,8 +366,12 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
     # initialize distribution over LoTs given total 
     # participant behaviour
     logp_LoT_given_behaviour_total = (
-        np.zeros(len(LoTs)) - np.log(len(LoTs))
+        np.zeros(len(LoTs)) 
+        # (log)divide by sum
+        - np.log(len(LoTs))
     )
+    
+    logposterior_history = logp_LoT_given_behaviour_total[None,:]
     
     for participant_index in range(n_participants):
 
@@ -544,16 +549,25 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
                 (logp_LoT_given_no - logp_LoT_given_behaviour[:,None])
             ).sum(0)
             
-            infogain = np.stack((infogain_no, infogain_yes))
-            
+            # calculate the marginal probability given current knowledge
+            # of answering yes for each object; this is needed to
+            # calculate the *expected* info gain.
+            # This is sum_{LoT} P(LoT) P(yes | LoT)
+            # Dims: (object)
+            logp_yes = logsumexp(
+                # (LoT)
+                logp_LoT_given_behaviour[:,None]
+                # (LoT, object)
+                + logp_yes_given_LoT,
+                0
+            )
+
             # Expected (over the two possible answers) information gain
             # of showing each object to the participant.
             # dimensions: (object)
-            # QUESTION: Do I need to weight by overall probability
-            # of answering yes / no?
-            expected_info_gain = np.mean(
-                infogain,
-                axis=0
+            expected_info_gain = (
+                -np.expm1(logp_yes)*infogain_no +
+                np.exp(logp_yes)   *infogain_yes
             )
             
             # print("Expected info gains: ", expected_info_gain)
@@ -582,14 +596,18 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
             
             # generate simulated behaviour from the participant
             # by sampling an answer ('yes' or 'no') for that trial
-            p_yes = np.exp(
-                logp_yes_given_LoT[index_true_LoT,asked_object]
+            # And clip in [0,1] since sometimes I was getting things
+            # that were slightly off!
+            p_yes_participant = np.clip(
+                np.exp(
+                    logp_yes_given_LoT[index_true_LoT,asked_object]
+                ),
+                0, 1
             )
-            # print("Probability of yes: ", p_yes)
-            
+            # print("Probability of yes: ", p_yes_participant)
             agent_behaviour = np.random.choice(
                 [0,1],
-                p=[1-p_yes, p_yes]
+                p=[1-p_yes_participant, p_yes_participant]
             )
             
             # print("Agent behaviour: ", agent_behaviour)
@@ -605,36 +623,84 @@ def calculate_logp_LoT_given_behaviour_dynamic(lengths, LoTs, categories,
             # accumulate likelihood of that trial in unnormalized posterior
             logp_LoT_given_behaviour += logp_behaviour_given_LoT
 
-        # normalize to find probability of each LoT given the agent's behaviour
-        # i.e. which stimuli were accepted and rejected
-        # Dimensions: (LoT)
-        logp_LoT_given_behaviour -= logsumexp(
-            logp_LoT_given_behaviour, 
-            axis=0,
-            use_ne=False
-        )
+            # normalize to find probability of each LoT given the agent's behaviour
+            # i.e. which stimuli were accepted and rejected so far.
+            # Need to do it at each trial because we're calculating
+            # the marginal probability of answering yes
+            # Dimensions: (LoT)
+            logp_LoT_given_behaviour -= logsumexp(
+                logp_LoT_given_behaviour, 
+                axis=0,
+                use_ne=False
+            )
+        
         # Dimensions: (LoT)
         logp_LoT_given_behaviour_total += logp_LoT_given_behaviour
         
-        print("Done with participant ", participant_index)
+        # normalize posterior for participants up to this point,
+        # to apply optional stopping rule.
+        # Dims (LoT)
+        logp_LoT_given_behaviour_total -= logsumexp(
+            logp_LoT_given_behaviour_total, 
+            axis=0,
+            use_ne=False
+        )
+        
+        logposterior_history = np.concatenate((
+            logposterior_history,
+            logp_LoT_given_behaviour_total[None,:]
+        ))
+        
+        print(
+            "Done with participant ", 
+            participant_index
+        )
+        
+#         print(
+#             "True LoT, P true LoT: ", 
+#             index_true_LoT, 
+#             np.exp(logp_LoT_given_behaviour[index_true_LoT])
+#         )
+        
+#         argmax = np.argmax(logp_LoT_given_behaviour)
+#         print(
+#             "Trial P max, LoT max: ", 
+#             argmax, 
+#             np.exp(logp_LoT_given_behaviour[argmax])
+#         )
+        
+#         print(
+#             "True P tot, true max: ",
+#             index_true_LoT,
+#             np.exp(logp_LoT_given_behaviour_total[index_true_LoT])
+#         )
+        
+#         argmax_total = np.argmax(logp_LoT_given_behaviour_total)
+#         print(
+#             "Total P max, LoT max: ", 
+#             argmax_total, 
+#             np.exp(logp_LoT_given_behaviour_total[argmax_total]), 
+#             "\n"
+#         ) 
+         
+        if optional_stopping and np.any(np.exp(logp_LoT_given_behaviour_total) > 0.95):
+            break
     
-    logp_LoT_given_behaviour_total -= logsumexp(
-        logp_LoT_given_behaviour_total, 
-        axis=0,
-        use_ne=False
-    )
-    
-    print("\n\nTrue LoT: ", index_true_LoT)
-    print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[index_true_LoT]))
-    argmax = np.argmax(logp_LoT_given_behaviour_total)
-    print("P max, LoT max: ", argmax, np.exp(logp_LoT_given_behaviour_total[argmax]), "\n\n") 
+    argmax_total = np.argmax(logp_LoT_given_behaviour_total)
+    print(
+        "Final P max, LoT max: ", 
+        argmax_total, 
+        np.exp(logp_LoT_given_behaviour_total[argmax_total]), 
+        "\n"
+    ) 
 
-    return LoTs[index_true_LoT], logp_LoT_given_behaviour_total
+    return LoTs[index_true_LoT], logp_LoT_given_behaviour_total, logposterior_history
 
 
 
 def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories, 
-                                               n_participants, temp, index_true_LoT):
+                                              n_participants, temp, index_true_LoT,
+                                              optional_stopping=True):
     """
     This is the version of the experiment where participants are given
     feedback trial-by-trial, but the order in which the stimuli are shown 
@@ -663,6 +729,8 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
     logp_LoT_given_behaviour_total = (
         np.zeros(len(LoTs)) - np.log(len(LoTs))
     )
+    
+    logposterior_history = logp_LoT_given_behaviour_total[None,:]
     
     for participant_index in range(n_participants):
 
@@ -790,8 +858,11 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
             
             # generate simulated behaviour from the participant
             # by sampling an answer ('yes' or 'no') for that trial
-            p_yes = np.exp(
-                logp_yes_given_LoT[index_true_LoT,asked_object]
+            p_yes = np.clip(
+                np.exp(
+                    logp_yes_given_LoT[index_true_LoT,asked_object]
+                ),
+                0,1
             )
             # print("Probability of yes: ", p_yes)
             
@@ -826,18 +897,27 @@ def calculate_logp_LoT_given_behaviour_serial(lengths, LoTs, categories,
         
         print("Done with participant ", participant_index)
     
-    logp_LoT_given_behaviour_total -= logsumexp(
-        logp_LoT_given_behaviour_total, 
-        axis=0,
-        use_ne=False
-    )
+        # normalize total
+        logp_LoT_given_behaviour_total -= logsumexp(
+            logp_LoT_given_behaviour_total, 
+            axis=0,
+            use_ne=False
+        )
+        
+        logposterior_history = np.concatenate((
+            logposterior_history,
+            logp_LoT_given_behaviour_total[None,:]
+        ))
+                 
+        if optional_stopping and np.any(np.exp(logp_LoT_given_behaviour_total) > 0.95):
+            break
     
     print("\n\nTrue LoT: ", index_true_LoT)
     print("P true LoT: ", np.exp(logp_LoT_given_behaviour_total[index_true_LoT]))
     argmax = np.argmax(logp_LoT_given_behaviour_total)
     print("P max, LoT max: ", argmax, np.exp(logp_LoT_given_behaviour_total[argmax]), "\n\n") 
 
-    return index_true_LoT, logp_LoT_given_behaviour_total
+    return index_true_LoT, logp_LoT_given_behaviour_total, logposterior_history
 
 
 def run_simulation_log(datasize, lengths_full, LoTs_full, categories, n_participants,

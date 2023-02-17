@@ -100,8 +100,12 @@ if __name__=='__main__':
     # Store for every true LoT, for each experiment within that LoT,
     # the posterior over LoTs given the data in that experiment
     results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
+    
+    histories = []
     for j, true_LoT in enumerate(LoTs):
         iteration_start_time = time.time()
+        
+        histories_LoT = []
         for i in range(n_experiments):
             
             if type_experiment == "scattershot":
@@ -123,7 +127,7 @@ if __name__=='__main__':
             elif type_experiment == "dynamic":
                 
                 # logp_LoT_given_behaviour has shape (LoT)
-                _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour_dynamic(
+                _, logp_LoT_given_behaviour, history = calculate_logp_LoT_given_behaviour_dynamic(
                     lengths=lengths, 
                     LoTs=LoTs, 
                     categories=categories, 
@@ -131,11 +135,12 @@ if __name__=='__main__':
                     temp=temp, 
                     index_true_LoT=j
                 )
+                histories_LoT.append(history)
         
             elif type_experiment == "serial":
                 
                 # logp_LoT_given_behaviour has shape (LoT)
-                _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour_serial(
+                _, logp_LoT_given_behaviour, history = calculate_logp_LoT_given_behaviour_serial(
                     lengths=lengths, 
                     LoTs=LoTs, 
                     categories=categories, 
@@ -143,6 +148,7 @@ if __name__=='__main__':
                     temp=temp, 
                     index_true_LoT=j
                 )
+                histories_LoT.append(history)
                 
             else:
                 raise NotImplementedError(
@@ -150,6 +156,10 @@ if __name__=='__main__':
                 )
             
             results[j,i] = logp_LoT_given_behaviour
+            
+            print("Done with experiment: ", i)
+        
+        histories.append(histories_LoT)
         
         print("Done with LoT: ", j)
         print("For this iteration, seconds: ", time.time()-iteration_start_time)
@@ -162,10 +172,16 @@ if __name__=='__main__':
         f'nexperiments-{n_experiments}_'
         f'type-{type_experiment}'
     )
+    
+    content_to_save = {
+        'LoTs': LoTs,
+        'results': results,
+        'histories': histories
+    }
+    
     with open(f'./data/{filename}.npz', 'wb') as openfile:
         np.savez_compressed(
             file=openfile,
-            LoTs=LoTs,
-            results=results
+            **content_to_save
         )
     
