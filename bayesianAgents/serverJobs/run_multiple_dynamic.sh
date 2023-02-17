@@ -1,4 +1,4 @@
-for n_participants in 300
+for n_participants in 100
 do
     for temp in 0.5 1.0 3.0 5.0
     do
