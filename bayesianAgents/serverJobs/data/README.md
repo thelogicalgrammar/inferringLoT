@@ -1,0 +1,1 @@
+This folder contains the simulation results produced by server runs.
