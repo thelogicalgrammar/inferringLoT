@@ -67,6 +67,7 @@ if __name__=='__main__':
     temp = args.temp
     n_experiments = args.n_experiments
     type_experiment = args.type_experiment
+    datasize = args.datasize
     
     pprint(vars(args))
 
@@ -103,7 +104,7 @@ if __name__=='__main__':
     for j, true_LoT in enumerate(LoTs):
         
         filename = (
-            f'datasize-{datasize}_'
+            f'datasize-{datasize}_' if (datasize is not None) else '' +
             f'nparticipants-{n_participants}_'
             f'temp-{temp}_'
             f'nexperiments-{n_experiments}_'
@@ -127,9 +128,7 @@ if __name__=='__main__':
         for i in range(n_experiments):
             
             if type_experiment == "scattershot":
-                
-                datasize = args.datasize
-                
+                                
                 # logp_LoT_given_behaviour has shape (LoT)
                 _, logp_LoT_given_behaviour = calculate_logp_LoT_given_behaviour(
                     datasize=datasize, 
