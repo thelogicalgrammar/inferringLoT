@@ -184,7 +184,7 @@ if __name__=='__main__':
             'LoTs': LoTs,
             'index_true_LoT': j,
             'results': results,
-            'histories': histories
+            'histories': histories_LoT
         }
     
         with open(filepath, 'wb') as openfile:
