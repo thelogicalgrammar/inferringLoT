@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 import sys
+import os
 sys.path.append("../")
 sys.path.append("../../")
 from global_utilities import LoT_indices_to_operators
@@ -16,7 +17,7 @@ if __name__=='__main__':
         '--datasize', 
         # required=True,
         type=int, 
-        help='Number of objects shown'
+        help='Number of objects shown. Only used for scattershot experiments.'
     )
     parser.add_argument(
         '--n_participants', 
@@ -88,6 +89,7 @@ if __name__=='__main__':
         lengths_full[argsort_by_N], 
         LoTs_full.iloc[argsort_by_N].values
     )
+    
     print("LoTs shape: ", LoTs.shape)
     print('Prepared the lengths and LoTs arrays')
     
@@ -97,15 +99,31 @@ if __name__=='__main__':
     ])
     
     start_time = time.time()
-    # Store for every true LoT, for each experiment within that LoT,
-    # the posterior over LoTs given the data in that experiment
-    results = np.zeros((len(LoTs), n_experiments, len(LoTs)))
     
-    histories = []
     for j, true_LoT in enumerate(LoTs):
-        iteration_start_time = time.time()
         
+        filename = (
+            f'datasize-{datasize}_'
+            f'nparticipants-{n_participants}_'
+            f'temp-{temp}_'
+            f'nexperiments-{n_experiments}_'
+            f'type-{type_experiment}_'
+            f'LoT-{j}'
+        )
+        
+        filepath = f'./data/{filename}.npz'
+        
+        # if filename already exists from e.g. a previous run
+        # of the model, don't save
+        if os.path.isfile(filepath):
+            print(f"File {filename} exists")
+            continue
+        
+        iteration_start_time = time.time()
         histories_LoT = []
+        # Store for the current LoT, for each experiment within that LoT,
+        # the posterior over LoTs given the data in that experiment
+        results = []
         for i in range(n_experiments):
             
             if type_experiment == "scattershot":
@@ -155,33 +173,24 @@ if __name__=='__main__':
                     "Specified experiment type not recognized!"
                 )
             
-            results[j,i] = logp_LoT_given_behaviour
+            results.append(logp_LoT_given_behaviour)
             
             print("Done with experiment: ", i)
-        
-        histories.append(histories_LoT)
-        
+                
         print("Done with LoT: ", j)
         print("For this iteration, seconds: ", time.time()-iteration_start_time)
         print("For all simulation, seconds: ", time.time()-start_time, '\n')
+
+        content_to_save = {
+            'LoTs': LoTs,
+            'index_true_LoT': j,
+            'results': results,
+            'histories': histories
+        }
     
-    filename = (
-        f'datasize-{datasize}_'
-        f'nparticipants-{n_participants}_'
-        f'temp-{temp}_'
-        f'nexperiments-{n_experiments}_'
-        f'type-{type_experiment}'
-    )
-    
-    content_to_save = {
-        'LoTs': LoTs,
-        'results': results,
-        'histories': histories
-    }
-    
-    with open(f'./data/{filename}.npz', 'wb') as openfile:
-        np.savez_compressed(
-            file=openfile,
-            **content_to_save
-        )
+        with open(filepath, 'wb') as openfile:
+            np.savez_compressed(
+                file=openfile,
+                **content_to_save
+            )
     
