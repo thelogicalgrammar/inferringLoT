@@ -58,7 +58,7 @@ if __name__=='__main__':
             'scattershot: Participants are asked to categorize all unseen datapoints \n'
             'dynamic: participants categorize and get feedback on each trial;'
             ' next stim is chosen with greedy Bayesian exp design \n' 
-            'serial: '
+            'serial: next stim is chosen at random'
         )
     )
 
